@@ -1,1 +1,1 @@
-from app.quiz.models import *
+from app.game.models import *
