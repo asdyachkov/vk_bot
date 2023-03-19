@@ -8,6 +8,7 @@ from app.game.models import (
 
 
 class GameAccessor(BaseAccessor):
+
     async def get_all_users_by_chat_id(self, chat_id: int) -> list[PlayerDC] | None:
         query = select(GameDCModel.c.players).where(GameDCModel.c.chat_id == chat_id)
         async with self.app.database._engine.connect() as connection:
