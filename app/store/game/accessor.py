@@ -51,24 +51,23 @@ class GameAccessor(BaseAccessor):
                 await connection.commit()
         return None
 
-    async def get_last_game_by_chat_id(self, chat_id: int) -> tuple[GameDC, list[PlayerDC]] | None:
-        query = select(GameDCModel).where(GameDCModel.chat_id == chat_id).order_by(desc(GameDCModel.created_at)).limit(1)
+    async def get_last_game_by_chat_id(self, chat_id: int) -> GameDC | None:
+        query = select(GameDCModel).where(GameDCModel.chat_id == chat_id)
         async with self.app.database._engine.connect() as connection:
             games: CursorResult = await connection.execute(query)
         games_all = games.fetchone()
-        if len(games_all) != 1:
+        if not games_all:
             return None
         else:
-            game = games_all[0]
             out_players = []
-            query = select(PlayerDCModel).where(PlayerDCModel.game_id == game.id)
+            query = select(PlayerDCModel).where(PlayerDCModel.game_id == chat_id)
             async with self.app.database._engine.connect() as connection:
                 players: CursorResult = await connection.execute(query)
             players_all = players.fetchall()
             for player in players_all:
-                out_players.append(PlayerDC(player['vk_id'], player['name'], player['last_name'], player['score']))
-            out_game = GameDC(games_all['id'], games_all['created_at'], games_all['chat_id'], out_players)
-            return out_game, out_players
+                out_players.append(PlayerDC(player[0], player[1], player[2], player[4]))
+            out_game = GameDC(created_at=games_all[0], chat_id=games_all[1], players=out_players)
+            return out_game
 
     async def get_all_scores(self, score: int) -> int | None:
         query = select(GameScoreDCModel.id).where(GameScoreDCModel.points == score)
