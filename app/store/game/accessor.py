@@ -17,11 +17,15 @@ class GameAccessor(BaseAccessor):
         if len(players_all) != 0:
             players_out = []
             for player in players_all:
-                players_out.append(PlayerDC(player['vk_id'], player['name'], player['last_name'], player['score']))
+                query = select(PlayerDCModel.scores).where(PlayerDCModel.vk_id == player['vk_id'])
+                async with self.app.database._engine.connect() as connection:
+                    scores: CursorResult = await connection.execute(query)
+                score_out = scores.fetchone()
+                players_out.append(PlayerDC(player['vk_id'], player['name'], player['last_name'], score_out[0]))
             return players_out
         return None
 
-    async def create_game(self, game: GameDC, players: list[PlayerDC]) -> None:
+    async def create_game(self, game: GameDC) -> None:
         if not await self.is_chat_id_exists(game.chat_id):
             query = insert(GameDCModel).returning(GameDCModel.chat_id).values(created_at=game.created_at, chat_id=game.chat_id)
         else:
@@ -30,7 +34,7 @@ class GameAccessor(BaseAccessor):
             id_ = await connection.execute(query)
             await connection.commit()
         game_id = id_.fetchone()[0]
-        for player in players:
+        for player in game.players:
             score_id = await self.get_all_scores(player.score)
             if not score_id:
                 query = insert(GameScoreDCModel).returning(GameScoreDCModel.id).values(points=player.score)

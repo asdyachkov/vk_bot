@@ -3,6 +3,8 @@ from typing import Any, Optional
 from aiohttp.web import json_response as aiohttp_json_response
 from aiohttp.web_response import Response
 
+from app.users.dataclassess import ChatUser
+
 
 def json_response(data: Any = None, status: str = "ok") -> Response:
     if data is None:
@@ -31,3 +33,14 @@ def error_json_response(
             "data": data,
         },
     )
+
+
+def users_to_json(users: list[ChatUser]):
+    json_users = []
+    for user in users:
+        json_users.append({
+            "id": user.id,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+        })
+    return json_users

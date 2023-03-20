@@ -8,6 +8,7 @@ from aiohttp.client import ClientSession
 from app.base.base_accessor import BaseAccessor
 from app.store.vk_api.dataclasses import Message, Update, UpdateObject
 from app.store.vk_api.poller import Poller
+from app.users.dataclassess import ChatUser
 
 if typing.TYPE_CHECKING:
     from app.web.app import Application
@@ -115,3 +116,23 @@ class VkApiAccessor(BaseAccessor):
         ) as resp:
             data = await resp.json()
             self.logger.info(data)
+
+    async def get_all_users_in_chat_by_peer_id(self, peer_id: int) -> list[ChatUser] | None:
+        async with self.session.get(
+                self._build_query(
+                    API_PATH,
+                    "messages.getConversationMembers",
+                    params={
+                        "peer_id": peer_id,
+                        "access_token": self.app.config.bot.token,
+                    },
+                )
+        ) as resp:
+            data = await resp.json()
+            users = data["response"]['profiles']
+            user_objects = []
+            for user in users:
+                user_objects.append(ChatUser(user['id'], user['first_name'], user['last_name']))
+            if len(user_objects) > 0:
+                return user_objects
+            return None
