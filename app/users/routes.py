@@ -6,4 +6,5 @@ if typing.TYPE_CHECKING:
 
 def setup_routes(app: "Application"):
     from app.users.views import GetUsersByPeerId
+
     app.router.add_view("/users.get_peer_id", GetUsersByPeerId)

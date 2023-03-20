@@ -94,7 +94,7 @@ class VkApiAccessor(BaseAccessor):
                                 id=update["object"]["message"]["id"],
                                 user_id=update["object"]["message"]["from_id"],
                                 body=update["object"]["message"]["text"],
-                                peer_id=update["object"]["message"]["peer_id"]
+                                peer_id=update["object"]["message"]["peer_id"],
                             ),
                         )
                     )
@@ -110,29 +110,33 @@ class VkApiAccessor(BaseAccessor):
                     "peer_id": message.peer_id,
                     "message": message.text,
                     "access_token": self.app.config.bot.token,
-                    "chat_id": 86
+                    "chat_id": 86,
                 },
             )
         ) as resp:
             data = await resp.json()
             self.logger.info(data)
 
-    async def get_all_users_in_chat_by_peer_id(self, peer_id: int) -> list[ChatUser] | None:
+    async def get_all_users_in_chat_by_peer_id(
+        self, peer_id: int
+    ) -> list[ChatUser] | None:
         async with self.session.get(
-                self._build_query(
-                    API_PATH,
-                    "messages.getConversationMembers",
-                    params={
-                        "peer_id": peer_id,
-                        "access_token": self.app.config.bot.token,
-                    },
-                )
+            self._build_query(
+                API_PATH,
+                "messages.getConversationMembers",
+                params={
+                    "peer_id": peer_id,
+                    "access_token": self.app.config.bot.token,
+                },
+            )
         ) as resp:
             data = await resp.json()
-            users = data["response"]['profiles']
+            users = data["response"]["profiles"]
             user_objects = []
             for user in users:
-                user_objects.append(ChatUser(user['id'], user['first_name'], user['last_name']))
+                user_objects.append(
+                    ChatUser(user["id"], user["first_name"], user["last_name"])
+                )
             if len(user_objects) > 0:
                 return user_objects
             return None

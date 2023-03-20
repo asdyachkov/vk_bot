@@ -43,12 +43,13 @@ class PlayerDCModel(db):
     game_id = Column(ForeignKey("games.chat_id"))
     games = relationship("GameDCModel", back_populates="players")
     score_id = Column(ForeignKey("scores.id"))
-    scores = relationship("GameScoreDCModel", backref=backref("players", uselist=False, cascade='all, delete-orphan'))
+    scores = relationship(
+        "GameScoreDCModel",
+        backref=backref("players", uselist=False, cascade="all, delete-orphan"),
+    )
 
 
 class GameScoreDCModel(db):
     __tablename__ = "scores"
     id = Column(Integer(), primary_key=True)
     points = Column(Integer(), unique=True)
-
-

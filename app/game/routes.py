@@ -6,7 +6,11 @@ if typing.TYPE_CHECKING:
 
 
 def setup_routes(app: "Application"):
-    from app.game.views import AddGameView, GetGameByChatIdView, GetUsersByChatIdView
+    from app.game.views import (
+        AddGameView,
+        GetGameByChatIdView,
+        GetUsersByChatIdView,
+    )
 
     app.router.add_view("/game.add_game", AddGameView)
     app.router.add_view("/game.get_last_by_chat_id", GetGameByChatIdView)

@@ -39,23 +39,27 @@ def error_json_response(
 def users_to_json(users: list[ChatUser]):
     json_users = []
     for user in users:
-        json_users.append({
-            "id": user.id,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-        })
+        json_users.append(
+            {
+                "id": user.id,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+            }
+        )
     return json_users
 
 
 def players_to_json(players: list[PlayerDC]):
     json_users = []
     for player in players:
-        json_users.append({
-            "vk_id": player.vk_id,
-            "name": player.name,
-            "last_name": player.last_name,
-            "score": player.score
-        })
+        json_users.append(
+            {
+                "vk_id": player.vk_id,
+                "name": player.name,
+                "last_name": player.last_name,
+                "score": player.score,
+            }
+        )
     return json_users
 
 
@@ -63,5 +67,5 @@ def game_to_json(game: GameDC):
     return {
         "chat_id": game.chat_id,
         "created_at": str(game.created_at),
-        "players": players_to_json(game.players)
+        "players": players_to_json(game.players),
     }

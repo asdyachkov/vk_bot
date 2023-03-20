@@ -1,6 +1,10 @@
 from typing import Optional, TYPE_CHECKING
 
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    create_async_engine,
+)
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from app.store.database import db
@@ -23,7 +27,9 @@ class Database:
             await connection.run_sync(self._db.metadata.drop_all)
             await connection.run_sync(self._db.metadata.create_all)
         # await self.app.store.admins.start_admin()
-        self.session = sessionmaker(self._engine, expire_on_commit=False, class_=AsyncSession)
+        self.session = sessionmaker(
+            self._engine, expire_on_commit=False, class_=AsyncSession
+        )
 
     async def disconnect(self, *_: list, **__: dict) -> None:
         try:
