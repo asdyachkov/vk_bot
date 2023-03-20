@@ -6,6 +6,7 @@ admin:
   email: stepanderdichok@gmail.com
   password: Fucck228
 database:
+  url: postgresql+asyncpg://pwaehjqg:x5lVnQaSiJNr8bMbSTJaTbIwWEQtkOek@ruby.db.elephantsql.com/pwaehjqg
   host: ruby.db.elephantsql.com
   port: 5432
   user: pwaehjqg

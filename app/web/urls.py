@@ -5,6 +5,6 @@ __all__ = ("register_urls",)
 
 
 def register_urls(application: Application, cors: CorsConfig):
-    import app.users.urls
+    import app.users.routes
 
     app.users.urls.register_urls(application, cors)

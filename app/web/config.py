@@ -26,6 +26,7 @@ class BotConfig:
 
 @dataclass
 class DatabaseConfig:
+    url: str = "postgresql+asyncpg://kts_user:kts_pass@localhost/kts"
     host: str = "localhost"
     port: int = 5432
     user: str = "postgres"

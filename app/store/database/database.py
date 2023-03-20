@@ -1,14 +1,16 @@
 from typing import Optional, TYPE_CHECKING
 
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    create_async_engine,
+)
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from app.store.database import db
 
 if TYPE_CHECKING:
     from app.web.app import Application
-
-DATABASE_URL = 'postgresql+asyncpg://pwaehjqg:x5lVnQaSiJNr8bMbSTJaTbIwWEQtkOek@ruby.db.elephantsql.com/pwaehjqg'
 
 
 class Database:
@@ -20,12 +22,14 @@ class Database:
 
     async def connect(self, *_: list, **__: dict) -> None:
         self._db = db
-        self._engine = create_async_engine(DATABASE_URL)
+        self._engine = create_async_engine(self.app.config.database.url)
         async with self._engine.begin() as connection:
             await connection.run_sync(self._db.metadata.drop_all)
             await connection.run_sync(self._db.metadata.create_all)
         # await self.app.store.admins.start_admin()
-        self.session = sessionmaker(self._engine, expire_on_commit=False, class_=AsyncSession)
+        self.session = sessionmaker(
+            self._engine, expire_on_commit=False, class_=AsyncSession
+        )
 
     async def disconnect(self, *_: list, **__: dict) -> None:
         try:

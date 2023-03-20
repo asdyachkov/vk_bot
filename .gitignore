@@ -122,3 +122,5 @@ dmypy.json
 rpmtools
 local
 .DS_Store
+config.yaml
+alembic.ini

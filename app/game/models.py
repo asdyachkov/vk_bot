@@ -1,18 +1,18 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date
+from typing import Optional
 
 from sqlalchemy import Text, Column, ForeignKey, Integer, DateTime
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 
 from app.store.database.sqlalchemy_base import db
 
 
 @dataclass
 class GameDC:
-    id: int
-    created_at: datetime
     chat_id: int
     players: list["PlayerDC"]
+    created_at: Optional[DateTime] = date.today()
 
 
 @dataclass
@@ -30,9 +30,8 @@ class GameScoreDC:
 
 class GameDCModel(db):
     __tablename__ = "games"
-    id = Column(Integer(), primary_key=True)
     created_at = Column(DateTime(), nullable=False)
-    chat_id = Column(Integer(), nullable=False)
+    chat_id = Column(Integer(), nullable=False, primary_key=True)
     players = relationship("PlayerDCModel", back_populates="games")
 
 
@@ -41,14 +40,16 @@ class PlayerDCModel(db):
     vk_id = Column(Integer(), primary_key=True)
     name = Column(Text(), nullable=False)
     last_name = Column(Text(), nullable=False)
-    game_id = Column(ForeignKey("games.id"))
+    game_id = Column(ForeignKey("games.chat_id"))
     games = relationship("GameDCModel", back_populates="players")
-    score = Column(ForeignKey("scores.points"))
-    scores = relationship("GameScoreDCModel", back_populates="players", cascade="all, delete-orphan", passive_deletes=True)
+    score_id = Column(ForeignKey("scores.id"))
+    scores = relationship(
+        "GameScoreDCModel",
+        backref=backref("players", uselist=False, cascade="all, delete-orphan"),
+    )
 
 
 class GameScoreDCModel(db):
     __tablename__ = "scores"
     id = Column(Integer(), primary_key=True)
     points = Column(Integer(), unique=True)
-    players = relationship("PlayerDCModel", back_populates="scores")
