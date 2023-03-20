@@ -10,8 +10,10 @@ class Store:
     def __init__(self, app: "Application"):
         from app.store.bot.manager import BotManager
         from app.store.vk_api.accessor import VkApiAccessor
+        from app.store.game.accessor import GameAccessor
 
         self.vk_api = VkApiAccessor(app)
+        self.game = GameAccessor(app)
         self.bots_manager = BotManager(app)
 
 
