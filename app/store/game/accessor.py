@@ -1,4 +1,4 @@
-from sqlalchemy import select, insert, desc, update
+from sqlalchemy import select, insert, update
 from sqlalchemy.engine import CursorResult
 
 from app.base.base_accessor import BaseAccessor
@@ -10,18 +10,14 @@ from app.game.models import (
 class GameAccessor(BaseAccessor):
 
     async def get_all_users_by_chat_id(self, chat_id: int) -> list[PlayerDC] | None:
-        query = select(GameDCModel.players).where(GameDCModel.chat_id == chat_id)
+        query = select(PlayerDCModel).where(PlayerDCModel.game_id == chat_id)
         async with self.app.database._engine.connect() as connection:
             players: CursorResult = await connection.execute(query)
         players_all = players.fetchall()
-        if len(players_all) != 0:
+        if players_all:
             players_out = []
             for player in players_all:
-                query = select(PlayerDCModel.scores).where(PlayerDCModel.vk_id == player['vk_id'])
-                async with self.app.database._engine.connect() as connection:
-                    scores: CursorResult = await connection.execute(query)
-                score_out = scores.fetchone()
-                players_out.append(PlayerDC(player['vk_id'], player['name'], player['last_name'], score_out[0]))
+                players_out.append(PlayerDC(player[0], player[1], player[2], player[4]))
             return players_out
         return None
 
