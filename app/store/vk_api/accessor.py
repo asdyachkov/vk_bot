@@ -1,3 +1,4 @@
+import json
 import random
 import typing
 from typing import Optional
@@ -6,7 +7,8 @@ from aiohttp import TCPConnector
 from aiohttp.client import ClientSession
 
 from app.base.base_accessor import BaseAccessor
-from app.store.vk_api.dataclasses import Message, Update, UpdateObject
+from app.store.vk_api.dataclasses import Message, Update, UpdateObject, UpdateEvent, UpdateEventObject
+from app.store.vk_api.keyboards import create_start_keyboard, create_recruiting_keyboard
 from app.store.vk_api.poller import Poller
 from app.users.dataclassess import ChatUser
 
@@ -98,6 +100,19 @@ class VkApiAccessor(BaseAccessor):
                             ),
                         )
                     )
+                elif update["type"] == "message_event":
+                    updates.append(
+                        UpdateEvent(
+                            type=update["type"],
+                            object=UpdateEventObject(
+                                user_id=update["object"]["user_id"],
+                                payload=update["object"]["payload"],
+                                peer_id=update["object"]["peer_id"],
+                                event_id=update["object"]["event_id"],
+                                conversation_message_id=update["object"]["conversation_message_id"]
+                            ),
+                        )
+                    )
             await self.app.store.bots_manager.handle_updates(updates)
 
     async def send_message(self, message: Message) -> None:
@@ -140,3 +155,59 @@ class VkApiAccessor(BaseAccessor):
             if len(user_objects) > 0:
                 return user_objects
             return None
+
+    async def start_message(self, message: Message) -> None:
+        async with self.session.get(
+                self._build_query(
+                    API_PATH,
+                    "messages.send",
+                    params={
+                        "random_id": random.randint(1, 2 ** 32),
+                        "peer_id": message.peer_id,
+                        "message": "Чтобы начать игру, необходмо набрать достаточное количество участников.",
+                        "access_token": self.app.config.bot.token,
+                        "chat_id": 86,
+                        "keyboard": create_start_keyboard(),
+                    },
+                )
+        ) as resp:
+            data = await resp.json()
+            self.logger.info(data)
+
+    async def answer_start_message(self, message: Message) -> None:
+        async with self.session.get(
+                self._build_query(
+                    API_PATH,
+                    "messages.sendMessageEventAnswer",
+                    params={
+                        "event_id": message.event_id,
+                        "user_id": message.user_id,
+                        "peer_id": message.peer_id,
+                        "event_data": json.dumps({
+                            "type": "show_snackbar",
+                            "text": "Регистрация начата"
+                        }),
+                        "access_token": self.app.config.bot.token,
+                    },
+                )
+        ) as resp:
+            data = await resp.json()
+            self.logger.info(data)
+
+    async def start_recruiting_players(self, message: Message) -> None:
+        async with self.session.get(
+                self._build_query(
+                    API_PATH,
+                    "messages.edit",
+                    params={
+                        "peer_id": message.peer_id,
+                        "message": f"Нажмите на кнопку ниже, чтобы зарегестрироваться.",
+                        "conversation_message_id": int(message.conversation_message_id),
+                        "user_id": message.user_id,
+                        "keyboard": create_recruiting_keyboard(),
+                        "access_token": self.app.config.bot.token,
+                    },
+                )
+        ) as resp:
+            data = await resp.json()
+            self.logger.info(data)
