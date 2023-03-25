@@ -20,6 +20,7 @@ def create_start_keyboard():
 
 
 def create_recruiting_keyboard():
+
     return json.dumps({
        "inline":True,
        "buttons":[
