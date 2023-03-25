@@ -7,6 +7,7 @@ from aiohttp import TCPConnector
 from aiohttp.client import ClientSession
 
 from app.base.base_accessor import BaseAccessor
+from app.game.models import PlayerDC
 from app.store.vk_api.dataclasses import Message, Update, UpdateObject, UpdateEvent, UpdateEventObject
 from app.store.vk_api.keyboards import create_start_keyboard, create_recruiting_keyboard
 from app.store.vk_api.poller import Poller
@@ -109,6 +110,7 @@ class VkApiAccessor(BaseAccessor):
                                 payload=update["object"]["payload"],
                                 peer_id=update["object"]["peer_id"],
                                 event_id=update["object"]["event_id"],
+                                group_id=update["group_id"],
                                 conversation_message_id=update["object"]["conversation_message_id"]
                             ),
                         )
@@ -211,3 +213,27 @@ class VkApiAccessor(BaseAccessor):
         ) as resp:
             data = await resp.json()
             self.logger.info(data)
+
+    async def get_user_by_id(self, id_: int, round_id: int) -> PlayerDC:
+        async with self.session.get(
+                self._build_query(
+                    API_PATH,
+                    "users.get",
+                    params={
+                        "user_ids": str(id_),
+                        "fields": "photo_id",
+                        "access_token": self.app.config.bot.token,
+                    },
+                )
+        ) as resp:
+            data = await resp.json()
+            self.logger.info(data)
+            if 'photo_id' not in data["response"][0].keys():
+                data["response"][0]['photo_id'] = "6492_192164258"
+            return PlayerDC(
+                last_name=data["response"][0]['last_name'],
+                name=data["response"][0]['first_name'],
+                photo_id=data["response"][0]['photo_id'],
+                round_id=round_id,
+                vk_id=id_
+            )

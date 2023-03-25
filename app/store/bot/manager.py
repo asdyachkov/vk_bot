@@ -1,6 +1,7 @@
 import typing
 from logging import getLogger
 
+from app.game.models import GameDC, RoundDC, PlayerDC
 from app.store.vk_api.dataclasses import Message, Update, UpdateEvent
 
 if typing.TYPE_CHECKING:
@@ -51,4 +52,21 @@ class BotManager:
                                 event_id=update.object.event_id,
                                 conversation_message_id=update.object.conversation_message_id
                             )
+                        )
+                        game_id = await self.app.store.game.create_game(
+                            GameDC(
+                                chat_id=int(update.object.group_id)
+                            )
+                        )
+                        if game_id:
+                            await self.app.store.game.create_round(
+                                RoundDC(
+                                    game_id=game_id
+                                )
+                            )
+                    elif update.object.payload["callback_data"] == "add me":
+                        round_id = await self.app.store.game.get_round_by_group_id(update.object.group_id)
+                        player = await self.app.store.vk_api.get_user_by_id(update.object.user_id, round_id)
+                        await self.app.store.game.add_player(
+                            player
                         )
