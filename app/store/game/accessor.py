@@ -1,4 +1,4 @@
-from sqlalchemy import select, insert, update
+from sqlalchemy import select, insert, update, and_
 from sqlalchemy.engine import CursorResult
 
 from app.base.base_accessor import BaseAccessor
@@ -6,8 +6,7 @@ from app.game.models import (
     GameDC,
     PlayerDC,
     GameDCModel,
-    PlayerDCModel,
-    GameScoreDCModel,
+    PlayerDCModel, RoundDC, RoundDCModel,
 )
 
 
@@ -28,59 +27,49 @@ class GameAccessor(BaseAccessor):
             return players_out
         return None
 
-    async def create_game(self, game: GameDC) -> None:
+    async def create_game(self, game: GameDC) -> int:
         if not await self.is_chat_id_exists(game.chat_id):
             query = (
                 insert(GameDCModel)
-                .returning(GameDCModel.chat_id)
-                .values(created_at=game.created_at, chat_id=game.chat_id)
+                .returning(GameDCModel.id)
+                .values(chat_id=game.chat_id)
             )
-        else:
-            query = (
-                update(GameDCModel)
-                .returning(GameDCModel.chat_id)
-                .values(created_at=game.created_at)
-                .where(GameDCModel.chat_id == game.chat_id)
-            )
+            async with self.app.database._engine.connect() as connection:
+                id_ = await connection.execute(query)
+                await connection.commit()
+            return int(id_.fetchone()[0])
+
+    async def create_round(self, round: RoundDC) -> None:
+        query = (
+            insert(RoundDCModel)
+            .returning(RoundDCModel.id)
+            .values(game_id=round.game_id)
+        )
         async with self.app.database._engine.connect() as connection:
             id_ = await connection.execute(query)
             await connection.commit()
-        game_id = id_.fetchone()[0]
-        for player in game.players:
-            score_id = await self.get_all_scores(player.score)
-            if not score_id:
-                query = (
-                    insert(GameScoreDCModel)
-                    .returning(GameScoreDCModel.id)
-                    .values(points=player.score)
-                )
-                async with self.app.database._engine.connect() as connection:
-                    id_ = await connection.execute(query)
-                    await connection.commit()
-                score_id = id_.fetchone()[0]
-            if not await self.is_player_exists(player.vk_id):
-                query = insert(PlayerDCModel).values(
-                    vk_id=player.vk_id,
-                    name=player.name,
-                    last_name=player.last_name,
-                    game_id=game_id,
-                    score_id=score_id,
-                )
-            else:
-                query = (
-                    update(PlayerDCModel)
-                    .values(
-                        name=player.name,
-                        last_name=player.last_name,
-                        game_id=game_id,
-                        score_id=score_id,
-                    )
-                    .where(PlayerDCModel.vk_id == player.vk_id)
-                )
-            async with self.app.database._engine.connect() as connection:
-                await connection.execute(query)
-                await connection.commit()
-        return None
+
+    async def add_player(self, player: PlayerDC) -> None:
+        query = (
+            insert(PlayerDCModel)
+            .returning(PlayerDCModel.id)
+            .values(
+                vk_id=player.vk_id,
+                name=player.name,
+                last_name=player.last_name,
+                photo_id=player.photo_id,
+            )
+        )
+        async with self.app.database._engine.connect() as connection:
+            id_ = await connection.execute(query)
+            await connection.commit()
+
+    async def get_round_by_group_id(self, group_id: int) -> int:
+        query = select(GameDCModel.rounds).where(GameDCModel.chat_id == group_id)
+        async with self.app.database._engine.connect() as connection:
+            rounds: CursorResult = await connection.execute(query)
+        round = rounds.fetchone()
+        return int(round[0])
 
     async def get_last_game_by_chat_id(self, chat_id: int) -> GameDC | None:
         query = select(GameDCModel).where(GameDCModel.chat_id == chat_id)
@@ -131,7 +120,7 @@ class GameAccessor(BaseAccessor):
             return True
 
     async def is_chat_id_exists(self, chat_id) -> bool:
-        query = select(GameDCModel).where(GameDCModel.chat_id == chat_id)
+        query = select(GameDCModel).where(and_(GameDCModel.chat_id == chat_id, GameDCModel.is_end == False))
         async with self.app.database._engine.connect() as connection:
             games: CursorResult = await connection.execute(query)
         game = games.fetchone()
