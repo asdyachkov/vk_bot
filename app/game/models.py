@@ -49,7 +49,7 @@ class RoundDCModel(db):
     __tablename__ = "rounds"
     id = Column(Integer(), primary_key=True)
     state = Column(Integer(), nullable=False, default=0)
-    game_id = Column(Integer(), ForeignKey("games.id"))
+    game_id = Column(Integer(), ForeignKey("games.id", ondelete='CASCADE'))
     players = relationship("PlayerDCModel", backref="rounds", uselist=True, cascade="all, delete-orphan")
 
 
@@ -63,7 +63,7 @@ class PlayerDCModel(db):
     photo_id = Column(Text(), nullable=False)
     score = Column(Integer(), nullable=False, default=0)
     state = Column(Integer(), nullable=False, default=0)
-    round_id = Column(Integer(), ForeignKey("rounds.id"))
+    round_id = Column(Integer(), ForeignKey("rounds.id", ondelete='CASCADE'))
 
 
 
