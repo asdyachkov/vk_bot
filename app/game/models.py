@@ -11,29 +11,28 @@ from app.store.database.sqlalchemy_base import db
 @dataclass
 class GameDC:
     chat_id: int
-    is_start: bool
-    is_end: bool
-    round_id: int
+    is_start: bool = False
+    is_end: bool = False
     created_at: Optional[DateTime] = datetime.now()
 
 
 @dataclass
 class PlayerDC:
     vk_id: int
-    is_admin: bool
     name: str
     last_name: str
     photo_id: str
-    state: int
     round_id: int
+    state: int = 0
+    is_admin: bool = False
     score: int = 0
 
 
 @dataclass
 class RoundDC:
-    state: int
-    players: list["PlayerDC"]
     game_id: int
+    state: int = 0
+    players: list["PlayerDC"] = list
 
 
 class GameDCModel(db):
@@ -42,16 +41,26 @@ class GameDCModel(db):
     chat_id = Column(Integer(), nullable=False)
     is_start = Column(Boolean(), default=False, nullable=False)
     is_end = Column(Boolean(), default=False, nullable=False)
-    created_at = Column(DateTime(), nullable=False)
-    rounds = relationship("RoundDCModel", backref=backref("games", uselist=False, cascade="all, delete-orphan"))
+    created_at = Column(DateTime(), nullable=False, default=datetime.now())
+    rounds = relationship(
+        "RoundDCModel",
+        backref="games",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
 
 
 class RoundDCModel(db):
     __tablename__ = "rounds"
     id = Column(Integer(), primary_key=True)
     state = Column(Integer(), nullable=False, default=0)
-    game_id = Column(Integer(), ForeignKey("games.id"))
-    players = relationship("PlayerDCModel", backref=backref("rounds", uselist=True, cascade="all, delete-orphan"))
+    game_id = Column(Integer(), ForeignKey("games.id", ondelete="CASCADE"))
+    players = relationship(
+        "PlayerDCModel",
+        backref="rounds",
+        uselist=True,
+        cascade="all, delete-orphan",
+    )
 
 
 class PlayerDCModel(db):
@@ -64,7 +73,4 @@ class PlayerDCModel(db):
     photo_id = Column(Text(), nullable=False)
     score = Column(Integer(), nullable=False, default=0)
     state = Column(Integer(), nullable=False, default=0)
-    round_id = Column(Integer(), ForeignKey("rounds.id"))
-
-
-
+    round_id = Column(Integer(), ForeignKey("rounds.id", ondelete="CASCADE"))

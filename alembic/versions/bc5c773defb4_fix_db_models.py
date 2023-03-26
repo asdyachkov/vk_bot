@@ -1,8 +1,8 @@
-"""Created new modified models
+"""Fix db models
 
-Revision ID: 4dceced16546
+Revision ID: bc5c773defb4
 Revises: 
-Create Date: 2023-03-25 02:14:47.467745
+Create Date: 2023-03-26 20:52:18.513836
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '4dceced16546'
+revision = 'bc5c773defb4'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -30,7 +30,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('state', sa.Integer(), nullable=False),
     sa.Column('game_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['game_id'], ['games.id'], ),
+    sa.ForeignKeyConstraint(['game_id'], ['games.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('players',
@@ -43,7 +43,7 @@ def upgrade() -> None:
     sa.Column('score', sa.Integer(), nullable=False),
     sa.Column('state', sa.Integer(), nullable=False),
     sa.Column('round_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['round_id'], ['rounds.id'], ),
+    sa.ForeignKeyConstraint(['round_id'], ['rounds.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     # ### end Alembic commands ###
