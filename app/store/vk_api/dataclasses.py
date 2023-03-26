@@ -37,4 +37,5 @@ class Message:
     text: str
     peer_id: int = None
     event_id: str = None
+    group_id: str = None
     conversation_message_id: int = None
