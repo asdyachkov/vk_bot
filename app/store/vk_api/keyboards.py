@@ -21,6 +21,40 @@ def create_start_keyboard():
     )
 
 
+def create_new_poll_keyboard(variants):
+    return json.dumps(
+        {
+            "inline": True,
+            "buttons": [
+                [
+                    {
+                        "action": {
+                            "type": "callback",
+                            "payload": '{"callback_data": '
+                            + f'"vk_id: {variants[0].vk_id}"'
+                            + "}",
+                            "label": f"{variants[0].name}",
+                        },
+                        "color": "primary",
+                    },
+                ],
+                [
+                    {
+                        "action": {
+                            "type": "callback",
+                            "payload": '{"callback_data": '
+                            + f'"vk_id: {variants[0].vk_id}"'
+                            + "}",
+                            "label": f"{variants[1].name}",
+                        },
+                        "color": "primary",
+                    },
+                ],
+            ],
+        }
+    )
+
+
 def create_recruiting_keyboard():
 
     return json.dumps(

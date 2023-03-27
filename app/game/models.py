@@ -73,4 +73,6 @@ class PlayerDCModel(db):
     photo_id = Column(Text(), nullable=False)
     score = Column(Integer(), nullable=False, default=0)
     state = Column(Integer(), nullable=False, default=0)
+    is_plaid = Column(Boolean(), nullable=False, default=False)
+    is_voited = Column(Boolean(), nullable=False, default=False)
     round_id = Column(Integer(), ForeignKey("rounds.id", ondelete="CASCADE"))
