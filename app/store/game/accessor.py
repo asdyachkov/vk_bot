@@ -41,6 +41,30 @@ class GameAccessor(BaseAccessor):
                 await connection.commit()
             return int(id_.fetchone()[0])
 
+    async def get_two_players_photo(self, score: int, round_id: int) -> list:
+        query = (
+            select(PlayerDCModel)
+            .where(and_(PlayerDCModel.score < score, PlayerDCModel.round_id == round_id))
+            .limit(2)
+        )
+        async with self.app.database._engine.connect() as connection:
+            players_ = await connection.execute(query)
+            await connection.commit()
+        players = players_.fetchall()
+        players_out = []
+        for player in players:
+            players_out.append(
+                PlayerDC(
+                    vk_id=player[1],
+                    name=player[3],
+                    last_name=player[4],
+                    # photo_id=player[5],
+                    photo_id="429598238_457264709",
+                    round_id=player[8],
+                )
+            )
+        return players_out
+
     async def delete_game(self, game_id: int) -> bool:
         query = (
             delete(GameDCModel)
@@ -151,6 +175,21 @@ class GameAccessor(BaseAccessor):
                 return int(round[0])
         return None
 
+    async def get_round_state_by_game_id(self, game_id: int) -> tuple | None:
+        query = (
+            select(RoundDCModel.state,
+                   RoundDCModel.id)
+            .where(RoundDCModel.game_id == game_id)
+            .limit(1)
+        )
+        async with self.app.database._engine.connect() as connection:
+            states_: CursorResult = await connection.execute(query)
+        states = states_.fetchone()
+        if states:
+            return int(states[0]), int(states[1])
+        else:
+            return None
+
     async def get_last_game_id_by_chat_id(self, chat_id: int) -> int | None:
         query = select(GameDCModel.id).where(
             and_(
@@ -193,8 +232,8 @@ class GameAccessor(BaseAccessor):
         else:
             return True
 
-    async def is_game_was_started_in_chat(self, chat_id) -> bool:
-        query = select(GameDCModel).where(
+    async def is_game_was_started_in_chat(self, chat_id) -> bool | int:
+        query = select(GameDCModel.id).where(
             and_(
                 GameDCModel.chat_id == chat_id,
                 GameDCModel.is_end == False,
@@ -207,7 +246,7 @@ class GameAccessor(BaseAccessor):
         if not game:
             return False
         else:
-            return True
+            return int(game[0])
 
     async def start_game(self, game_id) -> None:
         query = (

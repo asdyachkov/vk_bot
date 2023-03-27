@@ -236,8 +236,14 @@ class BotManager:
             message.group_id
         )
         await asyncio.sleep(sleep)
+        game_id_after_sleep = await self.app.store.game.get_last_game_id_by_chat_id(
+            message.group_id
+        )
         canceling_game = False
-        if game_id:
+        game_is_avaible = False
+        if game_id_after_sleep == game_id:
+            game_is_avaible = True
+        if game_id and game_id_after_sleep and game_is_avaible:
             round_id = await self.app.store.game.get_round_by_group_id(
                 message.group_id
             )
@@ -246,9 +252,10 @@ class BotManager:
                     await self.app.store.game.get_players_by_round_id(round_id)
                 )
                 if players_count:
-                    if players_count > 1:
+                    if players_count > 0:
                         await self.app.store.game.start_game(game_id)
                         await self.app.store.vk_api.start_game(message)
+                        await self.send_game_message(message)
                     else:
                         canceling_game = True
                 else:
@@ -256,10 +263,10 @@ class BotManager:
             else:
                 canceling_game = True
         else:
-            canceling_game = True
-        if canceling_game and is_timer_end:
+            game_is_avaible = False
+        if canceling_game and is_timer_end and game_is_avaible:
             await self.cancel_game(message, game_id)
-        else:
+        elif game_is_avaible and canceling_game:
             await self.app.store.vk_api.answer_pop_up_notification(
                 message=message, text="Недостаточно игроков, чтобы начать игру"
             )
@@ -274,3 +281,16 @@ class BotManager:
             await self.app.store.vk_api.answer_pop_up_notification(
                 message, text="Не удалось отменить игру"
             )
+
+    async def send_game_message(self, message: Message):
+        game_id = await self.app.store.game.is_game_was_started_in_chat(message.group_id)
+        round_state, round_id = await self.app.store.game.get_round_state_by_game_id(game_id)
+        variants = await self.app.store.game.get_two_players_photo(round_state, round_id)
+        if len(variants) == 0:
+            pass
+        elif len(variants) == 1:
+            variants = [variants[0], variants[0]]
+            await self.app.store.vk_api.create_new_poll(message, variants)
+        elif len(variants) == 2:
+            await self.app.store.vk_api.create_new_poll(message, variants)
+
