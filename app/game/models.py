@@ -42,15 +42,25 @@ class GameDCModel(db):
     is_start = Column(Boolean(), default=False, nullable=False)
     is_end = Column(Boolean(), default=False, nullable=False)
     created_at = Column(DateTime(), nullable=False, default=datetime.now())
-    rounds = relationship("RoundDCModel", backref="games", uselist=False, cascade="all, delete-orphan")
+    rounds = relationship(
+        "RoundDCModel",
+        backref="games",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
 
 
 class RoundDCModel(db):
     __tablename__ = "rounds"
     id = Column(Integer(), primary_key=True)
     state = Column(Integer(), nullable=False, default=0)
-    game_id = Column(Integer(), ForeignKey("games.id", ondelete='CASCADE'))
-    players = relationship("PlayerDCModel", backref="rounds", uselist=True, cascade="all, delete-orphan")
+    game_id = Column(Integer(), ForeignKey("games.id", ondelete="CASCADE"))
+    players = relationship(
+        "PlayerDCModel",
+        backref="rounds",
+        uselist=True,
+        cascade="all, delete-orphan",
+    )
 
 
 class PlayerDCModel(db):
@@ -63,7 +73,4 @@ class PlayerDCModel(db):
     photo_id = Column(Text(), nullable=False)
     score = Column(Integer(), nullable=False, default=0)
     state = Column(Integer(), nullable=False, default=0)
-    round_id = Column(Integer(), ForeignKey("rounds.id", ondelete='CASCADE'))
-
-
-
+    round_id = Column(Integer(), ForeignKey("rounds.id", ondelete="CASCADE"))

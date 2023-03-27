@@ -1,3 +1,4 @@
+import asyncio
 import json
 import random
 import typing
@@ -8,8 +9,17 @@ from aiohttp.client import ClientSession
 
 from app.base.base_accessor import BaseAccessor
 from app.game.models import PlayerDC
-from app.store.vk_api.dataclasses import Message, Update, UpdateObject, UpdateEvent, UpdateEventObject
-from app.store.vk_api.keyboards import create_start_keyboard, create_recruiting_keyboard
+from app.store.vk_api.dataclasses import (
+    Message,
+    Update,
+    UpdateObject,
+    UpdateEvent,
+    UpdateEventObject,
+)
+from app.store.vk_api.keyboards import (
+    create_start_keyboard,
+    create_recruiting_keyboard, create_new_poll_keyboard,
+)
 from app.store.vk_api.poller import Poller
 from app.users.dataclassess import ChatUser
 
@@ -111,7 +121,9 @@ class VkApiAccessor(BaseAccessor):
                                 peer_id=update["object"]["peer_id"],
                                 event_id=update["object"]["event_id"],
                                 group_id=update["group_id"],
-                                conversation_message_id=update["object"]["conversation_message_id"]
+                                conversation_message_id=update["object"][
+                                    "conversation_message_id"
+                                ],
                             ),
                         )
                     )
@@ -160,53 +172,36 @@ class VkApiAccessor(BaseAccessor):
 
     async def start_message(self, message: Message) -> None:
         async with self.session.get(
-                self._build_query(
-                    API_PATH,
-                    "messages.send",
-                    params={
-                        "random_id": random.randint(1, 2 ** 32),
-                        "peer_id": message.peer_id,
-                        "message": "Чтобы начать игру, необходмо набрать достаточное количество участников.",
-                        "access_token": self.app.config.bot.token,
-                        "chat_id": 86,
-                        "keyboard": create_start_keyboard(),
-                    },
-                )
+            self._build_query(
+                API_PATH,
+                "messages.send",
+                params={
+                    "random_id": random.randint(1, 2**32),
+                    "peer_id": message.peer_id,
+                    "message": "Чтобы начать игру, необходмо набрать достаточное количество участников.",
+                    "access_token": self.app.config.bot.token,
+                    "chat_id": 86,
+                    "keyboard": create_start_keyboard(),
+                },
+            )
         ) as resp:
             data = await resp.json()
             self.logger.info(data)
 
-    async def answer_start_message(self, message: Message) -> None:
-        async with self.session.get(
-                self._build_query(
-                    API_PATH,
-                    "messages.sendMessageEventAnswer",
-                    params={
-                        "event_id": message.event_id,
-                        "user_id": message.user_id,
-                        "peer_id": message.peer_id,
-                        "event_data": json.dumps({
-                            "type": "show_snackbar",
-                            "text": "Регистрация начата"
-                        }),
-                        "access_token": self.app.config.bot.token,
-                    },
-                )
-        ) as resp:
-            data = await resp.json()
-            self.logger.info(data)
-
-    async def start_recruiting_players(self, message: Message) -> None:
+    async def create_new_poll(self, message: Message, variants: list) -> None:
         async with self.session.get(
                 self._build_query(
                     API_PATH,
                     "messages.edit",
                     params={
                         "peer_id": message.peer_id,
-                        "message": f"Нажмите на кнопку ниже, чтобы зарегестрироваться.",
-                        "conversation_message_id": int(message.conversation_message_id),
+                        "message": f"Выберите, чей аватар лучше",
+                        "conversation_message_id": int(
+                            message.conversation_message_id
+                        ),
+                        "attachment": f"photo{variants[0].photo_id},photo{variants[1].photo_id}",
                         "user_id": message.user_id,
-                        "keyboard": create_recruiting_keyboard(),
+                        "keyboard": create_new_poll_keyboard(variants),
                         "access_token": self.app.config.bot.token,
                     },
                 )
@@ -214,26 +209,131 @@ class VkApiAccessor(BaseAccessor):
             data = await resp.json()
             self.logger.info(data)
 
-    async def get_user_by_id(self, id_: int, round_id: int) -> PlayerDC:
+    async def answer_pop_up_notification(
+        self, message: Message, text: str
+    ) -> None:
         async with self.session.get(
-                self._build_query(
-                    API_PATH,
-                    "users.get",
-                    params={
-                        "user_ids": str(id_),
-                        "fields": "photo_id",
-                        "access_token": self.app.config.bot.token,
-                    },
-                )
+            self._build_query(
+                API_PATH,
+                "messages.sendMessageEventAnswer",
+                params={
+                    "event_id": message.event_id,
+                    "user_id": message.user_id,
+                    "peer_id": message.peer_id,
+                    "event_data": json.dumps(
+                        {"type": "show_snackbar", "text": f"{text}"}
+                    ),
+                    "access_token": self.app.config.bot.token,
+                },
+            )
         ) as resp:
             data = await resp.json()
             self.logger.info(data)
-            if 'photo_id' not in data["response"][0].keys():
-                data["response"][0]['photo_id'] = "6492_192164258"
-            return PlayerDC(
-                last_name=data["response"][0]['last_name'],
-                name=data["response"][0]['first_name'],
-                photo_id=data["response"][0]['photo_id'],
-                round_id=round_id,
-                vk_id=id_
+
+    async def start_recruiting_players(self, message: Message) -> None:
+        async with self.session.get(
+            self._build_query(
+                API_PATH,
+                "messages.edit",
+                params={
+                    "peer_id": message.peer_id,
+                    "message": f"Нажмите на кнопку ниже, чтобы запустить регистрацию. Игра начнется через 2 минуты после начала регистрации",
+                    "conversation_message_id": int(
+                        message.conversation_message_id
+                    ),
+                    "user_id": message.user_id,
+                    "keyboard": create_recruiting_keyboard(),
+                    "access_token": self.app.config.bot.token,
+                },
             )
+        ) as resp:
+            data = await resp.json()
+            self.logger.info(data)
+
+    async def edit_recruiting_players(
+        self, message: Message, players: int
+    ) -> None:
+        async with self.session.get(
+            self._build_query(
+                API_PATH,
+                "messages.edit",
+                params={
+                    "peer_id": message.peer_id,
+                    "message": f"Нажмите на кнопку ниже, чтобы зарегестрироваться."
+                    f""
+                    f"Всего участников: {players}",
+                    "conversation_message_id": int(
+                        message.conversation_message_id
+                    ),
+                    "user_id": message.user_id,
+                    "keyboard": create_recruiting_keyboard(),
+                    "access_token": self.app.config.bot.token,
+                },
+            )
+        ) as resp:
+            data = await resp.json()
+            self.logger.info(data)
+
+    async def edit_recruiting_players_game_delete(
+        self, message: Message
+    ) -> None:
+        async with self.session.get(
+            self._build_query(
+                API_PATH,
+                "messages.edit",
+                params={
+                    "peer_id": message.peer_id,
+                    "message": f"Игра была отменена.",
+                    "conversation_message_id": int(
+                        message.conversation_message_id
+                    ),
+                    "user_id": message.user_id,
+                    "access_token": self.app.config.bot.token,
+                },
+            )
+        ) as resp:
+            data = await resp.json()
+            self.logger.info(data)
+
+    async def get_user_by_id(self, id_: int, round_id: int) -> PlayerDC:
+        async with self.session.get(
+            self._build_query(
+                API_PATH,
+                "users.get",
+                params={
+                    "user_ids": str(id_),
+                    "fields": "photo_id",
+                    "access_token": self.app.config.bot.token,
+                },
+            )
+        ) as resp:
+            data = await resp.json()
+            self.logger.info(data)
+            if "photo_id" not in data["response"][0].keys():
+                data["response"][0]["photo_id"] = "6492_192164258"
+            return PlayerDC(
+                last_name=data["response"][0]["last_name"],
+                name=data["response"][0]["first_name"],
+                photo_id=data["response"][0]["photo_id"],
+                round_id=round_id,
+                vk_id=id_,
+            )
+
+    async def start_game(self, message: Message):
+        async with self.session.get(
+            self._build_query(
+                API_PATH,
+                "messages.edit",
+                params={
+                    "peer_id": message.peer_id,
+                    "message": f"Регистрация окончена. Приятной игры!",
+                    "conversation_message_id": int(
+                        message.conversation_message_id
+                    ),
+                    "user_id": message.user_id,
+                    "access_token": self.app.config.bot.token,
+                },
+            )
+        ) as resp:
+            data = await resp.json()
+            self.logger.info(data)
