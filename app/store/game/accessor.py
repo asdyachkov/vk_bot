@@ -41,7 +41,7 @@ class GameAccessor(BaseAccessor):
                 await connection.commit()
             return int(id_.fetchone()[0])
 
-    async def get_two_players_photo(self, score: int, round_id: int) -> list:
+    async def get_two_players_photo(self, score: int, round_id: int) -> list[PlayerDC]:
         query = (
             select(PlayerDCModel)
             .where(and_(PlayerDCModel.score < score, PlayerDCModel.round_id == round_id))
@@ -149,6 +149,29 @@ class GameAccessor(BaseAccessor):
             counts: CursorResult = await connection.execute(query)
         count = counts.fetchone()
         return int(count[0])
+
+    async def get_player_id_by_vk_id(self, round_id: int, vk_id: int) -> int:
+        query = select(PlayerDCModel.id).where(and_(
+            PlayerDCModel.round_id == round_id,
+            PlayerDCModel.vk_id == vk_id
+        )).limit(1)
+        async with self.app.database._engine.connect() as connection:
+            players: CursorResult = await connection.execute(query)
+        player_ids = players.fetchone()
+        return int(player_ids[0])
+
+    async def get_players_id_by_list_of_vk_id(self, round_id: int, variants: list[PlayerDC]) -> list[int]:
+        query = select(PlayerDCModel.id).where(and_(
+            PlayerDCModel.round_id == round_id,
+            PlayerDCModel.vk_id.in_((variants[0].vk_id, variants[1].vk_id))
+        ))
+        async with self.app.database._engine.connect() as connection:
+            players: CursorResult = await connection.execute(query)
+        player_ids = players.fetchall()
+        players_out = []
+        for player in player_ids:
+            players_out.append(int(player[0]))
+        return players_out
 
     async def get_round_by_group_id(self, group_id: int) -> int | None:
         query = (
@@ -271,3 +294,39 @@ class GameAccessor(BaseAccessor):
         async with self.app.database._engine.connect() as connection:
             await connection.execute(query)
             await connection.commit()
+
+    async def add_point_score_to_player_by_player_id(self, player_id: int) -> None:
+        query = (
+            update(PlayerDCModel)
+            .values(score=PlayerDCModel.score + 1)
+            .where(
+                PlayerDCModel.vk_id == player_id
+            )
+        )
+        async with self.app.database._engine.connect() as connection:
+            await connection.execute(query)
+            await connection.commit()
+
+    async def increase_players_state(self, variants: list[int]) -> None:
+        query = (
+            update(PlayerDCModel)
+            .values(state=PlayerDCModel.state + 1)
+            .where(
+                PlayerDCModel.vk_id.in_(tuple(variants))
+            )
+        )
+        async with self.app.database._engine.connect() as connection:
+            await connection.execute(query)
+            await connection.commit()
+
+    async def is_player_already_void(self, player_id: int) -> bool:
+        query = select(PlayerDCModel.is_voited).where(
+            and_(
+                GameDCModel.chat_id == chat_id,
+                GameDCModel.is_end == False,
+                GameDCModel.is_start == True,
+            )
+        )
+        async with self.app.database._engine.connect() as connection:
+            games: CursorResult = await connection.execute(query)
+        game = games.fetchone()

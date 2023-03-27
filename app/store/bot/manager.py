@@ -228,6 +228,30 @@ class BotManager:
                             sleep=0,
                             is_timer_end=False,
                         )
+                    elif (
+                            "vk_id" in update.object.payload["callback_data"].split(":")
+                    ):
+                        is_score_increased = await self.increase_player_score(update)
+                        if is_score_increased:
+                            await self.app.store.vk_api.answer_pop_up_notification(
+                                Message(
+                                    user_id=update.object.user_id,
+                                    text="",
+                                    peer_id=update.object.peer_id,
+                                    event_id=update.object.event_id,
+                                ),
+                                text="Ваш голос учтен",
+                                )
+                        else:
+                            await self.app.store.vk_api.answer_pop_up_notification(
+                                Message(
+                                    user_id=update.object.user_id,
+                                    text="",
+                                    peer_id=update.object.peer_id,
+                                    event_id=update.object.event_id,
+                                ),
+                                text="Вы уже голосовали",
+                            )
 
     async def start_game(
         self, message: Message, sleep: int, is_timer_end: bool
@@ -287,10 +311,37 @@ class BotManager:
         round_state, round_id = await self.app.store.game.get_round_state_by_game_id(game_id)
         variants = await self.app.store.game.get_two_players_photo(round_state, round_id)
         if len(variants) == 0:
+            # Нужно переходить к некст раунду
             pass
         elif len(variants) == 1:
+            # Нужно увеличивать значение state и score у лакерка и переходить к некс раунду
             variants = [variants[0], variants[0]]
             await self.app.store.vk_api.create_new_poll(message, variants)
+            players_ids = await self.app.store.game.get_players_id_by_list_of_vk_id(round_id, variants)
+            await self.app.store.game.increase_players_state(players_ids)
         elif len(variants) == 2:
             await self.app.store.vk_api.create_new_poll(message, variants)
+            players_ids = await self.app.store.game.get_players_id_by_list_of_vk_id(round_id, variants)
+            await self.app.store.game.increase_players_state(players_ids)
+
+    async def increase_player_score(self, update) -> bool:
+        round_id = await self.app.store.game.get_round_by_group_id(
+            group_id=update.object.group_id
+        )
+        if await self.is_player_can_void(update.object.user_id, round_id):
+            player_id = await self.app.store.game.get_player_id_by_vk_id(
+                round_id=round_id,
+                vk_id=int(update.object.payload["callback_data"].split(":")[1].strip())
+            )
+            await self.app.store.game.add_point_score_to_player_by_player_id(
+                player_id=player_id,
+            )
+        else:
+            return False
+
+    async def is_player_can_void(self, user_id: int, round_id: int):
+        player_id = await self.app.store.game.get_player_id_by_vk_id(round_id, user_id)
+        if player_id:
+            await self.app.store.game.is_player_already_void()
+
 
