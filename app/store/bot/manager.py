@@ -2,7 +2,7 @@ import asyncio
 import typing
 from logging import getLogger
 
-from app.game.models import GameDC, RoundDC
+from app.game.models import GameDC, RoundDC, PlayerDC
 from app.store.vk_api.dataclasses import Message, Update, UpdateEvent
 
 if typing.TYPE_CHECKING:
@@ -228,10 +228,13 @@ class BotManager:
                             sleep=0,
                             is_timer_end=False,
                         )
-                    elif (
-                            "vk_id" in update.object.payload["callback_data"].split(":")
-                    ):
-                        is_score_increased = await self.increase_player_score(update)
+                    elif "vk_id" in update.object.payload[
+                        "callback_data"
+                    ].split(":"):
+                        (
+                            is_score_increased,
+                            round_id,
+                        ) = await self.increase_player_score(update)
                         if is_score_increased:
                             await self.app.store.vk_api.answer_pop_up_notification(
                                 Message(
@@ -241,7 +244,10 @@ class BotManager:
                                     event_id=update.object.event_id,
                                 ),
                                 text="Ваш голос учтен",
-                                )
+                            )
+                            await self.app.store.game.make_user_already_voited(
+                                round_id, update.object.user_id
+                            )
                         else:
                             await self.app.store.vk_api.answer_pop_up_notification(
                                 Message(
@@ -250,7 +256,7 @@ class BotManager:
                                     peer_id=update.object.peer_id,
                                     event_id=update.object.event_id,
                                 ),
-                                text="Вы уже голосовали",
+                                text="Голосовать могут только пользователи, участвующие в игре и только один раз за раунд",
                             )
 
     async def start_game(
@@ -260,8 +266,10 @@ class BotManager:
             message.group_id
         )
         await asyncio.sleep(sleep)
-        game_id_after_sleep = await self.app.store.game.get_last_game_id_by_chat_id(
-            message.group_id
+        game_id_after_sleep = (
+            await self.app.store.game.get_last_game_id_by_chat_id(
+                message.group_id
+            )
         )
         canceling_game = False
         game_is_avaible = False
@@ -276,7 +284,7 @@ class BotManager:
                     await self.app.store.game.get_players_by_round_id(round_id)
                 )
                 if players_count:
-                    if players_count > 0:
+                    if players_count > 1:
                         await self.app.store.game.start_game(game_id)
                         await self.app.store.vk_api.start_game(message)
                         await self.send_game_message(message)
@@ -307,41 +315,110 @@ class BotManager:
             )
 
     async def send_game_message(self, message: Message):
-        game_id = await self.app.store.game.is_game_was_started_in_chat(message.group_id)
-        round_state, round_id = await self.app.store.game.get_round_state_by_game_id(game_id)
-        variants = await self.app.store.game.get_two_players_photo(round_state, round_id)
-        if len(variants) == 0:
-            # Нужно переходить к некст раунду
-            pass
-        elif len(variants) == 1:
-            # Нужно увеличивать значение state и score у лакерка и переходить к некс раунду
-            variants = [variants[0], variants[0]]
-            await self.app.store.vk_api.create_new_poll(message, variants)
-            players_ids = await self.app.store.game.get_players_id_by_list_of_vk_id(round_id, variants)
-            await self.app.store.game.increase_players_state(players_ids)
-        elif len(variants) == 2:
-            await self.app.store.vk_api.create_new_poll(message, variants)
-            players_ids = await self.app.store.game.get_players_id_by_list_of_vk_id(round_id, variants)
-            await self.app.store.game.increase_players_state(players_ids)
+        game_id = await self.app.store.game.is_game_was_started_in_chat(
+            message.group_id
+        )
+        (
+            round_state,
+            round_id,
+        ) = await self.app.store.game.get_round_state_by_game_id(game_id)
+        if not await self.is_game_end(round_state, round_id):
+            variants = await self.app.store.game.get_two_players_photo(
+                round_state, round_id
+            )
+            if len(variants) == 0:
+                await self.app.store.game.start_next_level(game_id)
+                await self.send_game_message(message)
+            elif len(variants) == 1:
+                if (
+                    await self.app.store.game.get_players_in_round(
+                        round_state, round_id
+                    )
+                    > 1
+                ):
+                    player_id = (
+                        await self.app.store.game.get_player_id_by_vk_id(
+                            round_id, variants[0].vk_id
+                        )
+                    )
+                    await self.app.store.game.increase_winner_state(player_id)
+                    await self.app.store.game.start_next_level(game_id)
+                    await self.send_game_message(message)
+                else:
+                    await self.end_game(round_state, round_id, message, game_id)
+            elif len(variants) == 2:
+                await self.app.store.vk_api.create_new_poll(message, variants)
+                players_ids = (
+                    await self.app.store.game.get_players_id_by_list_of_vk_id(
+                        round_id, variants
+                    )
+                )
+                await self.app.store.game.increase_players_is_plaid(players_ids)
+                asyncio.ensure_future(
+                    self.to_sum_up_round(variants, round_id, message)
+                )
+        else:
+            await self.end_game(round_state, round_id, message, game_id)
 
-    async def increase_player_score(self, update) -> bool:
+    async def increase_player_score(self, update) -> [bool, int]:
         round_id = await self.app.store.game.get_round_by_group_id(
             group_id=update.object.group_id
         )
         if await self.is_player_can_void(update.object.user_id, round_id):
             player_id = await self.app.store.game.get_player_id_by_vk_id(
                 round_id=round_id,
-                vk_id=int(update.object.payload["callback_data"].split(":")[1].strip())
+                vk_id=int(
+                    update.object.payload["callback_data"].split(":")[1].strip()
+                ),
             )
             await self.app.store.game.add_point_score_to_player_by_player_id(
                 player_id=player_id,
             )
+            return True, round_id
         else:
-            return False
+            return False, -1
 
     async def is_player_can_void(self, user_id: int, round_id: int):
-        player_id = await self.app.store.game.get_player_id_by_vk_id(round_id, user_id)
+        player_id = await self.app.store.game.get_player_id_by_vk_id(
+            round_id, user_id
+        )
         if player_id:
-            await self.app.store.game.is_player_already_void()
+            if not await self.app.store.game.is_player_already_void(player_id):
+                return True
+        return False
 
+    async def to_sum_up_round(
+        self, variants: list[int], round_id: int, message: Message
+    ):
+        await asyncio.sleep(15)
+        if await self.app.store.game.is_game_was_started_in_chat(
+            message.group_id
+        ):
+            winner_id = await self.app.store.game.get_winner_round(
+                variants, round_id
+            )
+            await self.app.store.game.increase_winner_state(winner_id)
+            await self.app.store.game.reset_players_is_voited(round_id)
+            await self.send_game_message(message)
 
+    async def is_game_end(self, round_state: int, round_id: int):
+        not_plaid_people_count = (
+            await self.app.store.game.get_players_not_plaid_round(
+                round_state, round_id
+            )
+        )
+        next_round_people_count = (
+            await self.app.store.game.get_players_in_next_round(
+                round_state, round_id
+            )
+        )
+        if not_plaid_people_count == 0 and next_round_people_count == 1:
+            return True
+        return False
+
+    async def end_game(
+        self, round_state: int, round_id: int, message: Message, game_id: int
+    ):
+        winner = await self.app.store.game.get_winner(round_state, round_id)
+        await self.app.store.game.end_game(game_id)
+        await self.app.store.vk_api.end_game(message, winner)

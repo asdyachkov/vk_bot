@@ -30,7 +30,9 @@ def create_new_poll_keyboard(variants):
                     {
                         "action": {
                             "type": "callback",
-                            "payload": '{"callback_data": ' + f'"vk_id: {variants[0].vk_id}"' + '}',
+                            "payload": '{"callback_data": '
+                            + f'"vk_id: {variants[0].vk_id}"'
+                            + "}",
                             "label": f"{variants[0].name}",
                         },
                         "color": "primary",
@@ -40,7 +42,9 @@ def create_new_poll_keyboard(variants):
                     {
                         "action": {
                             "type": "callback",
-                            "payload": '{"callback_data": ' + f'"vk_id: {variants[0].vk_id}"' + '}',
+                            "payload": '{"callback_data": '
+                            + f'"vk_id: {variants[0].vk_id}"'
+                            + "}",
                             "label": f"{variants[1].name}",
                         },
                         "color": "primary",

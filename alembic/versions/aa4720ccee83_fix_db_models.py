@@ -1,8 +1,8 @@
 """Fix db models
 
-Revision ID: ee4eefb417a7
+Revision ID: aa4720ccee83
 Revises: 
-Create Date: 2023-03-27 17:35:10.617824
+Create Date: 2023-03-27 18:47:43.479928
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'ee4eefb417a7'
+revision = 'aa4720ccee83'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -42,6 +42,7 @@ def upgrade() -> None:
     sa.Column('photo_id', sa.Text(), nullable=False),
     sa.Column('score', sa.Integer(), nullable=False),
     sa.Column('state', sa.Integer(), nullable=False),
+    sa.Column('local_wins', sa.Integer(), nullable=False),
     sa.Column('is_voited', sa.Boolean(), nullable=False),
     sa.Column('round_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['round_id'], ['rounds.id'], ondelete='CASCADE'),

@@ -18,7 +18,8 @@ from app.store.vk_api.dataclasses import (
 )
 from app.store.vk_api.keyboards import (
     create_start_keyboard,
-    create_recruiting_keyboard, create_new_poll_keyboard,
+    create_recruiting_keyboard,
+    create_new_poll_keyboard,
 )
 from app.store.vk_api.poller import Poller
 from app.users.dataclassess import ChatUser
@@ -190,21 +191,21 @@ class VkApiAccessor(BaseAccessor):
 
     async def create_new_poll(self, message: Message, variants: list) -> None:
         async with self.session.get(
-                self._build_query(
-                    API_PATH,
-                    "messages.edit",
-                    params={
-                        "peer_id": message.peer_id,
-                        "message": f"Выберите, чей аватар лучше",
-                        "conversation_message_id": int(
-                            message.conversation_message_id
-                        ),
-                        "attachment": f"photo{variants[0].photo_id},photo{variants[1].photo_id}",
-                        "user_id": message.user_id,
-                        "keyboard": create_new_poll_keyboard(variants),
-                        "access_token": self.app.config.bot.token,
-                    },
-                )
+            self._build_query(
+                API_PATH,
+                "messages.edit",
+                params={
+                    "peer_id": message.peer_id,
+                    "message": f"Выберите, чей аватар лучше. Голосование длиться 1 минуту.",
+                    "conversation_message_id": int(
+                        message.conversation_message_id
+                    ),
+                    "attachment": f"photo{variants[0].photo_id},photo{variants[1].photo_id}",
+                    "user_id": message.user_id,
+                    "keyboard": create_new_poll_keyboard(variants),
+                    "access_token": self.app.config.bot.token,
+                },
+            )
         ) as resp:
             data = await resp.json()
             self.logger.info(data)
@@ -330,6 +331,26 @@ class VkApiAccessor(BaseAccessor):
                     "conversation_message_id": int(
                         message.conversation_message_id
                     ),
+                    "user_id": message.user_id,
+                    "access_token": self.app.config.bot.token,
+                },
+            )
+        ) as resp:
+            data = await resp.json()
+            self.logger.info(data)
+
+    async def end_game(self, message: Message, winner: PlayerDC):
+        async with self.session.get(
+            self._build_query(
+                API_PATH,
+                "messages.edit",
+                params={
+                    "peer_id": message.peer_id,
+                    "message": f"Игра закончилась. Победитель {winner.name} {winner.last_name}",
+                    "conversation_message_id": int(
+                        message.conversation_message_id
+                    ),
+                    "attachment": f"photo{winner.photo_id}",
                     "user_id": message.user_id,
                     "access_token": self.app.config.bot.token,
                 },
