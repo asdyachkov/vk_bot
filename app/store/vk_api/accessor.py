@@ -294,6 +294,27 @@ class VkApiAccessor(BaseAccessor):
             data = await resp.json()
             self.logger.info(data)
 
+    async def edit_message_to_leaderboard(
+        self, message: Message
+    ) -> None:
+        async with self.session.get(
+            self._build_query(
+                API_PATH,
+                "messages.edit",
+                params={
+                    "peer_id": message.peer_id,
+                    "message": message.text,
+                    "conversation_message_id": int(
+                        message.conversation_message_id
+                    ),
+                    "user_id": message.user_id,
+                    "access_token": self.app.config.bot.token,
+                },
+            )
+        ) as resp:
+            data = await resp.json()
+            self.logger.info(data)
+
     async def get_user_by_id(self, id_: int, round_id: int) -> PlayerDC:
         async with self.session.get(
             self._build_query(

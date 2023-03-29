@@ -15,7 +15,17 @@ def create_start_keyboard():
                         },
                         "color": "primary",
                     },
-                ]
+                ],
+                [
+                    {
+                        "action": {
+                            "type": "callback",
+                            "payload": '{"callback_data": "check_leaderboard"}',
+                            "label": "Посмотреть таблицу лидеров",
+                        },
+                        "color": "primary",
+                    },
+                ],
             ],
         }
     )
@@ -43,7 +53,7 @@ def create_new_poll_keyboard(variants):
                         "action": {
                             "type": "callback",
                             "payload": '{"callback_data": '
-                            + f'"vk_id: {variants[0].vk_id}"'
+                            + f'"vk_id: {variants[1].vk_id}"'
                             + "}",
                             "label": f"{variants[1].name} (Голосов: {variants[1].score})",
                         },
