@@ -18,7 +18,7 @@ class BotManager:
     async def handle_updates(self, updates: list[Update | UpdateEvent]):
         for update in updates:
             if update.type == "message_new":
-                if update.object.body == "/start":
+                if update.object.body == "/bot":
                     await self.app.store.vk_api.start_message(
                         Message(
                             user_id=update.object.user_id,
@@ -236,13 +236,31 @@ class BotManager:
                             round_id,
                         ) = await self.increase_player_score(update)
                         if is_score_increased:
+                            message = Message(
+                                user_id=update.object.user_id,
+                                text="",
+                                peer_id=update.object.peer_id,
+                                event_id=update.object.event_id,
+                                group_id=update.object.group_id,
+                                conversation_message_id=update.object.conversation_message_id,
+                            )
+                            game_id = await self.app.store.game.is_game_was_started_in_chat(
+                                message.group_id
+                            )
+                            (
+                                round_state,
+                                round_id,
+                            ) = await self.app.store.game.get_round_state_by_game_id(game_id)
+                            variants = await self.app.store.game.get_two_players_photo(
+                                round_state, round_id, for_update=True
+                            )
+                            print(variants)
+                            await self.app.store.vk_api.create_new_poll(
+                                message,
+                                variants,
+                            )
                             await self.app.store.vk_api.answer_pop_up_notification(
-                                Message(
-                                    user_id=update.object.user_id,
-                                    text="",
-                                    peer_id=update.object.peer_id,
-                                    event_id=update.object.event_id,
-                                ),
+                                message,
                                 text="Ваш голос учтен",
                             )
                             await self.app.store.game.make_user_already_voited(
@@ -390,7 +408,7 @@ class BotManager:
     async def to_sum_up_round(
         self, variants: list[int], round_id: int, message: Message
     ):
-        await asyncio.sleep(15)
+        await asyncio.sleep(30)
         if await self.app.store.game.is_game_was_started_in_chat(
             message.group_id
         ):
