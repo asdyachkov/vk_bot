@@ -102,51 +102,65 @@ class BotManager:
                     elif update.object.payload["callback_data"] == "add me":
                         canceling_add = False
                         # добавить проверку началась ли игра
-                        round_id = (
-                            await self.app.store.game.get_round_by_group_id(
-                                update.object.group_id
-                            )
+                        game_id = await self.app.store.game.is_game_was_started_in_chat(
+                            update.object.group_id
                         )
-                        if round_id:
-                            player = await self.app.store.vk_api.get_user_by_id(
-                                update.object.user_id, round_id
+                        if game_id:
+                            round_id = (
+                                await self.app.store.game.get_round_by_group_id(
+                                    update.object.group_id
+                                )
                             )
-                            if player:
-                                if not await self.app.store.game.is_user_already_in_game(
-                                    player
-                                ):
-                                    is_player_added_to_leaderboard = await self.app.store.game.is_player_added_to_leaderboard(
-                                        player.vk_id
-                                    )
-                                    is_player_added = (
-                                        await self.app.store.game.add_player(
-                                            player,
-                                            is_player_added_to_leaderboard
+                            if round_id:
+                                player = await self.app.store.vk_api.get_user_by_id(
+                                    update.object.user_id, round_id
+                                )
+                                if player:
+                                    if not await self.app.store.game.is_user_already_in_game(
+                                        player
+                                    ):
+                                        is_player_added_to_leaderboard = await self.app.store.game.is_player_added_to_leaderboard(
+                                            player.vk_id
                                         )
-                                    )
-                                    if is_player_added:
-                                        players = await self.app.store.game.get_players_by_round_id(
-                                            round_id
+                                        is_player_added = (
+                                            await self.app.store.game.add_player(
+                                                player,
+                                                is_player_added_to_leaderboard
+                                            )
                                         )
-                                        await self.app.store.vk_api.edit_recruiting_players(
-                                            Message(
-                                                user_id=update.object.user_id,
-                                                text="",
-                                                peer_id=update.object.peer_id,
-                                                event_id=update.object.event_id,
-                                                conversation_message_id=update.object.conversation_message_id,
-                                            ),
-                                            players,
-                                        )
+                                        if is_player_added:
+                                            players = await self.app.store.game.get_players_by_round_id(
+                                                round_id
+                                            )
+                                            await self.app.store.vk_api.edit_recruiting_players(
+                                                Message(
+                                                    user_id=update.object.user_id,
+                                                    text="",
+                                                    peer_id=update.object.peer_id,
+                                                    event_id=update.object.event_id,
+                                                    conversation_message_id=update.object.conversation_message_id,
+                                                ),
+                                                players,
+                                            )
+                                        else:
+                                            canceling_add = True
                                     else:
                                         canceling_add = True
                                 else:
                                     canceling_add = True
                             else:
                                 canceling_add = True
+                            if canceling_add:
+                                await self.app.store.vk_api.answer_pop_up_notification(
+                                    Message(
+                                        user_id=update.object.user_id,
+                                        text="",
+                                        peer_id=update.object.peer_id,
+                                        event_id=update.object.event_id,
+                                    ),
+                                    text="Вы уже зарегестрированы в этой игре",
+                                )
                         else:
-                            canceling_add = True
-                        if canceling_add:
                             await self.app.store.vk_api.answer_pop_up_notification(
                                 Message(
                                     user_id=update.object.user_id,
@@ -154,7 +168,7 @@ class BotManager:
                                     peer_id=update.object.peer_id,
                                     event_id=update.object.event_id,
                                 ),
-                                text="Вы уже зарегестрированы в этой игре",
+                                text="Игра уже началась",
                             )
                     elif update.object.payload["callback_data"] == "delete me":
                         canceling_delete = False
