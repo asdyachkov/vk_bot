@@ -90,7 +90,7 @@ class VkApiAccessor(BaseAccessor):
                     "act": "a_check",
                     "key": self.key,
                     "ts": self.ts,
-                    "wait": 5,
+                    "wait": 1,
                 },
             )
         ) as resp:
