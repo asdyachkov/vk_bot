@@ -260,9 +260,7 @@ class VkApiAccessor(BaseAccessor):
                 "messages.edit",
                 params={
                     "peer_id": message.peer_id,
-                    "message": f"Нажмите на кнопку ниже, чтобы зарегестрироваться."
-                    f""
-                    f"Всего участников: {players}",
+                    "message": f"Нажмите на кнопку ниже, чтобы зарегестрироваться. Всего участников: {players}",
                     "conversation_message_id": int(
                         message.conversation_message_id
                     ),
