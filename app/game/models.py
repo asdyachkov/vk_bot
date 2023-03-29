@@ -29,6 +29,17 @@ class PlayerDC:
 
 
 @dataclass
+class LeaderDC:
+    vk_id: int
+    name: str
+    last_name: str
+    photo_id: str
+    is_admin: bool = False
+    total_score: int = 0
+    total_wins: int = 0
+
+
+@dataclass
 class RoundDC:
     game_id: int
     state: int = 0
@@ -76,3 +87,15 @@ class PlayerDCModel(db):
     is_plaid = Column(Boolean(), nullable=False, default=False)
     is_voited = Column(Boolean(), nullable=False, default=False)
     round_id = Column(Integer(), ForeignKey("rounds.id", ondelete="CASCADE"))
+
+
+class LeaderDCModel(db):
+    __tablename__ = "leaders"
+    id = Column(Integer(), primary_key=True)
+    vk_id = Column(Integer(), nullable=False)
+    is_admin = Column(Boolean(), default=False, nullable=False)
+    name = Column(Text(), nullable=False)
+    last_name = Column(Text(), nullable=False)
+    photo_id = Column(Text(), nullable=False)
+    total_score = Column(Integer(), nullable=False, default=0)
+    total_wins = Column(Integer(), nullable=False, default=0)
