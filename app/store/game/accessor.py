@@ -42,15 +42,19 @@ class GameAccessor(BaseAccessor):
             return int(id_.fetchone()[0])
 
     async def get_two_players_photo(
-        self, score: int, round_id: int
+        self, round_state: int, round_id: int, for_update=False
     ) -> list[PlayerDC]:
+        if for_update == False:
+            is_plaid = (False,)
+        else:
+            is_plaid = (False, True)
         query = (
             select(PlayerDCModel)
             .where(
                 and_(
-                    PlayerDCModel.score - score == -1,
+                    PlayerDCModel.state - round_state == -1,
                     PlayerDCModel.round_id == round_id,
-                    PlayerDCModel.is_plaid == False,
+                    PlayerDCModel.is_plaid.in_(is_plaid),
                 )
             )
             .limit(2)
@@ -69,6 +73,7 @@ class GameAccessor(BaseAccessor):
                     name=player[3],
                     last_name=player[4],
                     photo_id=player[5],
+                    score=player[6],
                     round_id=player[8],
                 )
             )

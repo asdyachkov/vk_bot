@@ -33,7 +33,7 @@ def create_new_poll_keyboard(variants):
                             "payload": '{"callback_data": '
                             + f'"vk_id: {variants[0].vk_id}"'
                             + "}",
-                            "label": f"{variants[0].name}",
+                            "label": f"{variants[0].name} (Голосов: {variants[0].score})",
                         },
                         "color": "primary",
                     },
@@ -45,7 +45,7 @@ def create_new_poll_keyboard(variants):
                             "payload": '{"callback_data": '
                             + f'"vk_id: {variants[0].vk_id}"'
                             + "}",
-                            "label": f"{variants[1].name}",
+                            "label": f"{variants[1].name} (Голосов: {variants[1].score})",
                         },
                         "color": "primary",
                     },
