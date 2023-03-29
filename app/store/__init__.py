@@ -11,10 +11,12 @@ class Store:
         from app.store.bot.manager import BotManager
         from app.store.vk_api.accessor import VkApiAccessor
         from app.store.game.accessor import GameAccessor
+        from app.store.admin.accessor import AdminAccessor
 
         self.vk_api = VkApiAccessor(app)
         self.game = GameAccessor(app)
         self.bots_manager = BotManager(app)
+        self.admin = AdminAccessor(app)
 
 
 def setup_store(app: "Application"):

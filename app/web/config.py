@@ -16,6 +16,7 @@ class SessionConfig:
 class AdminConfig:
     email: str
     password: str
+    salt: str
 
 
 @dataclass
@@ -36,7 +37,7 @@ class DatabaseConfig:
 
 @dataclass
 class Config:
-    admin: AdminConfig
+    admin: AdminConfig = None
     session: SessionConfig = None
     bot: BotConfig = None
     database: DatabaseConfig = None
@@ -53,6 +54,7 @@ def setup_config(app: "Application", config_path: str):
         admin=AdminConfig(
             email=raw_config["admin"]["email"],
             password=raw_config["admin"]["password"],
+            salt=raw_config["admin"]["salt"]
         ),
         bot=BotConfig(
             token=raw_config["bot"]["token"],
