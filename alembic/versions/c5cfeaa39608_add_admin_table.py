@@ -1,8 +1,8 @@
-"""Add leader table
+"""Add admin table
 
-Revision ID: b3970d78e6cc
+Revision ID: c5cfeaa39608
 Revises: 
-Create Date: 2023-03-29 18:06:06.709259
+Create Date: 2023-03-30 02:17:00.350386
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'b3970d78e6cc'
+revision = 'c5cfeaa39608'
 down_revision = None
 branch_labels = None
 depends_on = None

@@ -4,6 +4,7 @@ import typing
 from aiohttp.web_exceptions import HTTPException, HTTPUnprocessableEntity
 from aiohttp.web_middlewares import middleware
 from aiohttp_apispec import validation_middleware
+from aiohttp_session import get_session
 
 from app.web.utils import error_json_response
 
@@ -47,6 +48,32 @@ async def error_handling_middleware(request: "Request", handler):
         )
 
 
+@middleware
+async def auth_middleware(request: "Request", handler):
+    if request.path == '/admin.login':
+        response = await handler(request)
+        return response
+    else:
+        session = await get_session(request)
+        try:
+            if session._mapping['is_autorized_admin']['is_autorized'] and await request.app.store.admin.is_admin_by_email(session._mapping['is_autorized_admin']['email']):
+                response = await handler(request)
+                return response
+            else:
+                return error_json_response(
+                    http_status=403,
+                    status=HTTP_ERROR_CODES[403],
+                    message='No valid cookie',
+                )
+        except Exception as e:
+            return error_json_response(
+                http_status=401,
+                status=HTTP_ERROR_CODES[401],
+                message=str(e),
+            )
+
+
 def setup_middlewares(app: "Application"):
+    app.middlewares.append(auth_middleware)
     app.middlewares.append(error_handling_middleware)
     app.middlewares.append(validation_middleware)

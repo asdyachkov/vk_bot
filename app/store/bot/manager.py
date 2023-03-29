@@ -105,7 +105,7 @@ class BotManager:
                         game_id = await self.app.store.game.is_game_was_started_in_chat(
                             update.object.group_id
                         )
-                        if game_id:
+                        if not game_id:
                             round_id = (
                                 await self.app.store.game.get_round_by_group_id(
                                     update.object.group_id
