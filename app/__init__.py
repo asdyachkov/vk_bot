@@ -7,5 +7,5 @@ def read_version():
         return f.read().strip()
 
 
-__appname__ = "kts_backend"
+__appname__ = "app"
 __version__ = read_version()
