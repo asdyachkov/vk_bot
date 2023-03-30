@@ -294,9 +294,7 @@ class VkApiAccessor(BaseAccessor):
             data = await resp.json()
             self.logger.info(data)
 
-    async def edit_message_to_leaderboard(
-        self, message: Message
-    ) -> None:
+    async def edit_message_to_leaderboard(self, message: Message) -> None:
         async with self.session.get(
             self._build_query(
                 API_PATH,
@@ -315,7 +313,9 @@ class VkApiAccessor(BaseAccessor):
             data = await resp.json()
             self.logger.info(data)
 
-    async def get_user_by_id(self, id_: int, round_id: int) -> PlayerDC:
+    async def get_user_by_id(
+        self, id_: int, round_id: int, is_player_admin: bool
+    ) -> PlayerDC:
         async with self.session.get(
             self._build_query(
                 API_PATH,

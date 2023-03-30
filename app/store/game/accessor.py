@@ -8,7 +8,9 @@ from app.game.models import (
     GameDCModel,
     PlayerDCModel,
     RoundDC,
-    RoundDCModel, LeaderDCModel, LeaderDC,
+    RoundDCModel,
+    LeaderDCModel,
+    LeaderDC,
 )
 
 
@@ -57,9 +59,7 @@ class GameAccessor(BaseAccessor):
                     PlayerDCModel.is_plaid.in_(is_plaid),
                 )
             )
-            .order_by(
-                PlayerDCModel.vk_id
-            )
+            .order_by(PlayerDCModel.vk_id)
             .limit(2)
         )
         async with self.app.database._engine.connect() as connection:
@@ -74,6 +74,7 @@ class GameAccessor(BaseAccessor):
                 PlayerDC(
                     vk_id=player[1],
                     name=player[3],
+                    is_admin=player[2],
                     last_name=player[4],
                     photo_id=player[5],
                     score=player[6],
@@ -98,6 +99,7 @@ class GameAccessor(BaseAccessor):
             player[5] = "7542_456246318"
         return PlayerDC(
             vk_id=player[1],
+            is_admin=player[2],
             name=player[3],
             last_name=player[4],
             photo_id=player[5],
@@ -105,7 +107,12 @@ class GameAccessor(BaseAccessor):
         )
 
     async def get_3_best_leaders(self) -> list[LeaderDC]:
-        query = select(LeaderDCModel).order_by(desc(LeaderDCModel.total_wins)).order_by(desc(LeaderDCModel.total_score)).limit(3)
+        query = (
+            select(LeaderDCModel)
+            .order_by(desc(LeaderDCModel.total_wins))
+            .order_by(desc(LeaderDCModel.total_score))
+            .limit(3)
+        )
         async with self.app.database._engine.connect() as connection:
             leaders_ = await connection.execute(query)
             await connection.commit()
@@ -117,6 +124,7 @@ class GameAccessor(BaseAccessor):
             leaders_out.append(
                 LeaderDC(
                     vk_id=leader[1],
+                    is_admin=leader[2],
                     name=leader[3],
                     last_name=leader[4],
                     photo_id=leader[5],
@@ -190,16 +198,19 @@ class GameAccessor(BaseAccessor):
             id_ = await connection.execute(query)
             await connection.commit()
 
-    async def add_player(self, player: PlayerDC, is_player_added_to_leaderboard: bool) -> bool:
+    async def add_player(
+        self,
+        player: PlayerDC,
+        is_player_added_to_leaderboard: bool,
+        is_admin: bool,
+    ) -> bool:
         if not is_player_added_to_leaderboard:
-            query = (
-                insert(LeaderDCModel)
-                .values(
-                    vk_id=player.vk_id,
-                    name=player.name,
-                    last_name=player.last_name,
-                    photo_id=player.photo_id,
-                )
+            query = insert(LeaderDCModel).values(
+                vk_id=player.vk_id,
+                name=player.name,
+                last_name=player.last_name,
+                photo_id=player.photo_id,
+                is_admin=is_admin,
             )
             async with self.app.database._engine.connect() as connection:
                 await connection.execute(query)
@@ -213,6 +224,7 @@ class GameAccessor(BaseAccessor):
                 last_name=player.last_name,
                 photo_id=player.photo_id,
                 round_id=player.round_id,
+                is_admin=is_admin,
             )
         )
         async with self.app.database._engine.connect() as connection:
@@ -280,11 +292,8 @@ class GameAccessor(BaseAccessor):
         return int(player_ids[0])
 
     async def is_player_added_to_leaderboard(self, vk_id: int) -> bool:
-        query = (
-            select(LeaderDCModel.id)
-            .where(
-                LeaderDCModel.vk_id == vk_id,
-            )
+        query = select(LeaderDCModel.id).where(
+            LeaderDCModel.vk_id == vk_id,
         )
         async with self.app.database._engine.connect() as connection:
             players: CursorResult = await connection.execute(query)
