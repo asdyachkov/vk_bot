@@ -95,7 +95,7 @@ def create_recruiting_keyboard():
                     {
                         "action": {
                             "type": "callback",
-                            "payload": '{"callback_data": "start game"}',
+                            "payload": '{"callback_data": "start games"}',
                             "label": "Начать игру",
                         },
                         "color": "positive",
@@ -105,7 +105,7 @@ def create_recruiting_keyboard():
                     {
                         "action": {
                             "type": "callback",
-                            "payload": '{"callback_data": "delete game"}',
+                            "payload": '{"callback_data": "delete games"}',
                             "label": "Отменить игру",
                         },
                         "color": "negative",

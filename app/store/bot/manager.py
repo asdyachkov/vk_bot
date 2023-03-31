@@ -101,7 +101,6 @@ class BotManager:
                             )
                     elif update.object.payload["callback_data"] == "add me":
                         canceling_add = False
-                        # добавить проверку началась ли игра
                         game_id = await self.app.store.game.is_game_was_started_in_chat(
                             update.object.group_id
                         )
@@ -112,8 +111,13 @@ class BotManager:
                                 )
                             )
                             if round_id:
-                                player = await self.app.store.vk_api.get_user_by_id(
-                                    update.object.user_id, round_id
+                                is_admin = await self.app.store.admin.is_admin_by_vk_id(
+                                    update.object.user_id
+                                )
+                                player = (
+                                    await self.app.store.vk_api.get_user_by_id(
+                                        update.object.user_id, round_id
+                                    )
                                 )
                                 if player:
                                     if not await self.app.store.game.is_user_already_in_game(
@@ -122,11 +126,10 @@ class BotManager:
                                         is_player_added_to_leaderboard = await self.app.store.game.is_player_added_to_leaderboard(
                                             player.vk_id
                                         )
-                                        is_player_added = (
-                                            await self.app.store.game.add_player(
-                                                player,
-                                                is_player_added_to_leaderboard
-                                            )
+                                        is_player_added = await self.app.store.game.add_player(
+                                            player,
+                                            is_player_added_to_leaderboard,
+                                            is_admin,
                                         )
                                         if is_player_added:
                                             players = await self.app.store.game.get_players_by_round_id(
@@ -218,7 +221,7 @@ class BotManager:
                                 text="Вы еще не зарегестрированы в этой игре",
                             )
                     elif (
-                        update.object.payload["callback_data"] == "delete game"
+                        update.object.payload["callback_data"] == "delete games"
                     ):
                         game_id = await self.app.store.game.get_last_game_id_by_chat_id(
                             update.object.group_id
@@ -234,7 +237,9 @@ class BotManager:
                             ),
                             game_id=game_id,
                         )
-                    elif update.object.payload["callback_data"] == "start game":
+                    elif (
+                        update.object.payload["callback_data"] == "start games"
+                    ):
                         await self.start_game(
                             Message(
                                 user_id=update.object.user_id,
@@ -269,9 +274,13 @@ class BotManager:
                             (
                                 round_state,
                                 round_id,
-                            ) = await self.app.store.game.get_round_state_by_game_id(game_id)
-                            variants = await self.app.store.game.get_two_players_photo(
-                                round_state, round_id, for_update=True
+                            ) = await self.app.store.game.get_round_state_by_game_id(
+                                game_id
+                            )
+                            variants = (
+                                await self.app.store.game.get_two_players_photo(
+                                    round_state, round_id, for_update=True
+                                )
                             )
                             await self.app.store.vk_api.create_new_poll(
                                 message,
@@ -294,7 +303,10 @@ class BotManager:
                                 ),
                                 text="Голосовать могут только пользователи, участвующие в игре и только один раз за раунд",
                             )
-                    elif update.object.payload["callback_data"] == "check_leaderboard":
+                    elif (
+                        update.object.payload["callback_data"]
+                        == "check_leaderboard"
+                    ):
                         await self.show_leaderboard(
                             Message(
                                 user_id=update.object.user_id,
@@ -351,7 +363,12 @@ class BotManager:
             )
 
     async def cancel_game(self, message: Message, game_id: int):
-        is_game_deleted = await self.app.store.game.delete_game(game_id)
+        round_id = await self.app.store.game.get_round_by_group_id(
+            message.group_id
+        )
+        is_game_deleted = await self.app.store.game.delete_game(
+            game_id, round_id
+        )
         if is_game_deleted:
             await self.app.store.vk_api.edit_recruiting_players_game_delete(
                 message
@@ -470,7 +487,9 @@ class BotManager:
         self, round_state: int, round_id: int, message: Message, game_id: int
     ):
         winner = await self.app.store.game.get_winner(round_state, round_id)
-        await self.app.store.game.add_point_total_wins_to_player_by_player_vk_id(winner.vk_id)
+        await self.app.store.game.add_point_total_wins_to_player_by_player_vk_id(
+            winner.vk_id
+        )
         await self.app.store.game.end_game(game_id)
         await self.app.store.vk_api.end_game(message, winner)
 

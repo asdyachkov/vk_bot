@@ -294,9 +294,7 @@ class VkApiAccessor(BaseAccessor):
             data = await resp.json()
             self.logger.info(data)
 
-    async def edit_message_to_leaderboard(
-        self, message: Message
-    ) -> None:
+    async def edit_message_to_leaderboard(self, message: Message) -> None:
         async with self.session.get(
             self._build_query(
                 API_PATH,
