@@ -1,8 +1,8 @@
-"""Add admin table
+"""Da
 
-Revision ID: c5cfeaa39608
+Revision ID: dbd21b3422b9
 Revises: 
-Create Date: 2023-03-30 02:17:00.350386
+Create Date: 2023-03-31 13:47:40.966513
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'c5cfeaa39608'
+revision = 'dbd21b3422b9'
 down_revision = None
 branch_labels = None
 depends_on = None

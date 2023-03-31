@@ -2,7 +2,7 @@ import asyncio
 import typing
 from logging import getLogger
 
-from app.game.models import GameDC, RoundDC, PlayerDC
+from app.game.models import GameDC, RoundDC
 from app.store.vk_api.dataclasses import Message, Update, UpdateEvent
 
 if typing.TYPE_CHECKING:
