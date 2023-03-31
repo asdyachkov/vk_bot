@@ -7,7 +7,7 @@ class AddGameView(View):
     async def post(self):
         data = await self.request.json()
         players = []
-        for player in data["game"]["players"]:
+        for player in data["games"]["players"]:
             players.append(
                 PlayerDC(
                     vk_id=player["vk_id"],
@@ -16,7 +16,7 @@ class AddGameView(View):
                     score=player["score"],
                 )
             )
-        game = GameDC(chat_id=data["game"]["chat_id"], players=players)
+        game = GameDC(chat_id=data["games"]["chat_id"], players=players)
         await self.store.game.create_game(game=game)
         return json_response(data={"status": "ok"})
 
@@ -27,9 +27,9 @@ class GetGameByChatIdView(View):
         chat_id = data["chat_id"]
         out_game = await self.store.game.get_last_game_by_chat_id(chat_id)
         if out_game:
-            return json_response(data={"game": game_to_json(out_game)})
+            return json_response(data={"games": game_to_json(out_game)})
         else:
-            return json_response(data={"error": "No game found"})
+            return json_response(data={"error": "No games found"})
 
 
 class GetUsersByChatIdView(View):

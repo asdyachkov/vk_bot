@@ -14,3 +14,9 @@ aiohttp_session==2.12.0
 cryptography==39.0.2
 asyncpg==0.27.0
 alembic==1.10.2
+sqlalchemy-django-admin==0.0.6
+dj_database_url==1.3.0
+git+https://github.com/dvhb/dvhb-hybrid
+
+Django~=4.1.7
+aioworkers~=0.21.1

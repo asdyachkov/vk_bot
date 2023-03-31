@@ -221,7 +221,7 @@ class BotManager:
                                 text="Вы еще не зарегестрированы в этой игре",
                             )
                     elif (
-                        update.object.payload["callback_data"] == "delete game"
+                        update.object.payload["callback_data"] == "delete games"
                     ):
                         game_id = await self.app.store.game.get_last_game_id_by_chat_id(
                             update.object.group_id
@@ -237,7 +237,7 @@ class BotManager:
                             ),
                             game_id=game_id,
                         )
-                    elif update.object.payload["callback_data"] == "start game":
+                    elif update.object.payload["callback_data"] == "start games":
                         await self.start_game(
                             Message(
                                 user_id=update.object.user_id,
