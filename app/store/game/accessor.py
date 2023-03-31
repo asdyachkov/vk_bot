@@ -139,7 +139,7 @@ class GameAccessor(BaseAccessor):
     ) -> int:
         query = select(func.count(PlayerDCModel.id)).where(
             and_(
-                PlayerDCModel.score - score == 0,
+                PlayerDCModel.score - score == -2,
                 PlayerDCModel.round_id == round_id,
                 PlayerDCModel.is_plaid == False,
             )
@@ -147,7 +147,10 @@ class GameAccessor(BaseAccessor):
         async with self.app.database._engine.connect() as connection:
             counts: CursorResult = await connection.execute(query)
         count = counts.fetchone()
-        return int(count[0])
+        if count:
+            return int(count[0])
+        else:
+            return 0
 
     async def get_players_in_round(self, score: int, round_id: int) -> int:
         query = select(func.count(PlayerDCModel.id)).where(
