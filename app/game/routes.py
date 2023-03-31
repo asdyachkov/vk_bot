@@ -12,6 +12,6 @@ def setup_routes(app: "Application"):
         GetUsersByChatIdView,
     )
 
-    app.router.add_view("/game.add_game", AddGameView)
-    app.router.add_view("/game.get_last_by_chat_id", GetGameByChatIdView)
-    app.router.add_view("/game.get_users_by_chat_id", GetUsersByChatIdView)
+    app.router.add_view("/games.add_game", AddGameView)
+    app.router.add_view("/games.get_last_by_chat_id", GetGameByChatIdView)
+    app.router.add_view("/games.get_users_by_chat_id", GetUsersByChatIdView)

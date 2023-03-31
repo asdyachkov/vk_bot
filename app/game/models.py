@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import Text, Column, ForeignKey, Integer, DateTime, Boolean
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship
 
 from app.store.database.sqlalchemy_base import db
 
