@@ -176,7 +176,15 @@ class GameAccessor(BaseAccessor):
         count = counts.fetchone()
         return int(count[0])
 
-    async def delete_game(self, game_id: int) -> bool:
+    async def delete_game(self, game_id: int, round_id: int) -> bool:
+        query = delete(PlayerDCModel).where(PlayerDCModel.round_id==round_id)
+        async with self.app.database._engine.connect() as connection:
+            await connection.execute(query)
+            await connection.commit()
+        query = delete(RoundDCModel).where(RoundDCModel.id==round_id)
+        async with self.app.database._engine.connect() as connection:
+            await connection.execute(query)
+            await connection.commit()
         query = (
             delete(GameDCModel)
             .returning(GameDCModel.id)

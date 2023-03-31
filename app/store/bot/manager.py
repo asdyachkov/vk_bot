@@ -361,7 +361,8 @@ class BotManager:
             )
 
     async def cancel_game(self, message: Message, game_id: int):
-        is_game_deleted = await self.app.store.game.delete_game(game_id)
+        round_id = await self.app.store.game.get_round_by_group_id(message.group_id)
+        is_game_deleted = await self.app.store.game.delete_game(game_id, round_id)
         if is_game_deleted:
             await self.app.store.vk_api.edit_recruiting_players_game_delete(
                 message
