@@ -86,7 +86,7 @@ class GameAccessor(BaseAccessor):
     async def get_winner(self, score: int, round_id: int) -> PlayerDC:
         query = select(PlayerDCModel).where(
             and_(
-                PlayerDCModel.score - score == -1,
+                PlayerDCModel.state - score == 0,
                 PlayerDCModel.round_id == round_id,
                 PlayerDCModel.is_plaid == False,
             )
@@ -139,7 +139,7 @@ class GameAccessor(BaseAccessor):
     ) -> int:
         query = select(func.count(PlayerDCModel.id)).where(
             and_(
-                PlayerDCModel.score - score == -2,
+                PlayerDCModel.state - score == -2,
                 PlayerDCModel.round_id == round_id,
                 PlayerDCModel.is_plaid == False,
             )
@@ -155,7 +155,7 @@ class GameAccessor(BaseAccessor):
     async def get_players_in_round(self, score: int, round_id: int) -> int:
         query = select(func.count(PlayerDCModel.id)).where(
             and_(
-                PlayerDCModel.score - score == 0,
+                PlayerDCModel.state - score == 0,
                 PlayerDCModel.round_id == round_id,
             )
         )
@@ -167,7 +167,7 @@ class GameAccessor(BaseAccessor):
     async def get_players_in_next_round(self, score: int, round_id: int) -> int:
         query = select(func.count(PlayerDCModel.id)).where(
             and_(
-                PlayerDCModel.score - score == -1,
+                PlayerDCModel.state - score == -1,
                 PlayerDCModel.round_id == round_id,
             )
         )
@@ -177,11 +177,11 @@ class GameAccessor(BaseAccessor):
         return int(count[0])
 
     async def delete_game(self, game_id: int, round_id: int) -> bool:
-        query = delete(PlayerDCModel).where(PlayerDCModel.round_id==round_id)
+        query = delete(PlayerDCModel).where(PlayerDCModel.round_id == round_id)
         async with self.app.database._engine.connect() as connection:
             await connection.execute(query)
             await connection.commit()
-        query = delete(RoundDCModel).where(RoundDCModel.id==round_id)
+        query = delete(RoundDCModel).where(RoundDCModel.id == round_id)
         async with self.app.database._engine.connect() as connection:
             await connection.execute(query)
             await connection.commit()

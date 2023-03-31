@@ -18,7 +18,7 @@ from aioworkers.core.config import Config
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 config = Config()
-config.load(os.path.abspath(os.path.join(BASE_DIR, 'config.yaml')))
+config.load(os.path.abspath(os.path.join(BASE_DIR, "config.yaml")))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    'vk_bot_admin.games',
+    "vk_bot_admin.games.apps.GameConfig",
 ]
 
 MIDDLEWARE = [
@@ -56,7 +56,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-AUTH_USER_MODEL = 'games.User'
+AUTH_USER_MODEL = "games.User"
 
 ROOT_URLCONF = "vk_bot_admin.urls"
 
@@ -82,7 +82,11 @@ WSGI_APPLICATION = "vk_bot_admin.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-DATABASES = {'default': dj_database_url.parse('postgresql://pwaehjqg:x5lVnQaSiJNr8bMbSTJaTbIwWEQtkOek@ruby.db.elephantsql.com/pwaehjqg')}
+DATABASES = {
+    "default": dj_database_url.parse(
+        "postgresql://pwaehjqg:x5lVnQaSiJNr8bMbSTJaTbIwWEQtkOek@ruby.db.elephantsql.com/pwaehjqg"
+    )
+}
 
 
 # Password validation
@@ -107,7 +111,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "ru"
 
 TIME_ZONE = "UTC"
 

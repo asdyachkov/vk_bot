@@ -2,4 +2,5 @@ from django.apps import AppConfig
 
 
 class GameConfig(AppConfig):
-    name = 'vk_bot_admin.games'
+    name = "vk_bot_admin.games"
+    verbose_name = "Игры"

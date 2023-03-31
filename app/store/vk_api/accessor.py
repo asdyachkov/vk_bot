@@ -313,9 +313,7 @@ class VkApiAccessor(BaseAccessor):
             data = await resp.json()
             self.logger.info(data)
 
-    async def get_user_by_id(
-        self, id_: int, round_id: int
-    ) -> PlayerDC:
+    async def get_user_by_id(self, id_: int, round_id: int) -> PlayerDC:
         async with self.session.get(
             self._build_query(
                 API_PATH,
