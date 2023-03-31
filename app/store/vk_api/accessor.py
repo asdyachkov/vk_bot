@@ -314,7 +314,7 @@ class VkApiAccessor(BaseAccessor):
             self.logger.info(data)
 
     async def get_user_by_id(
-        self, id_: int, round_id: int, is_player_admin: bool
+        self, id_: int, round_id: int
     ) -> PlayerDC:
         async with self.session.get(
             self._build_query(

@@ -1,3 +1,4 @@
+import django
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
@@ -32,7 +33,7 @@ class Game(models.Model):
     chat_id = models.IntegerField(null=False)
     is_start = models.BooleanField(null=False, default=False)
     is_end = models.BooleanField(null=False, default=False)
-    created_at = models.DateTimeField(null=False, default=timezone.now)
+    created_at = models.DateTimeField(null=False, default=django.utils.timezone.now)
 
     class Meta:
         verbose_name = "Игра"
@@ -43,7 +44,7 @@ class Game(models.Model):
 class Round(models.Model):
 
     state = models.IntegerField(null=False, default=0)
-    game_id = models.ForeignKey('Game', null=False, on_delete=models.CASCADE)
+    game = models.OneToOneField("Game", on_delete=models.CASCADE, null=False)
 
     class Meta:
         verbose_name = "Роунд"
@@ -62,7 +63,7 @@ class Player(models.Model):
     state = models.IntegerField(null=False, default=0)
     is_plaid = models.BooleanField(null=False, default=False)
     is_voited = models.BooleanField(null=False, default=False)
-    round_id = models.OneToOneField(Round, on_delete=models.CASCADE, primary_key=True)
+    round = models.ForeignKey('Round', null=False, on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = "Игрок"

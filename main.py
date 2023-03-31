@@ -1,5 +1,5 @@
 import os
-
+from multiprocessing import Process
 import django
 
 from app.web.app import setup_app
@@ -13,13 +13,20 @@ if __name__ == "__main__":
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "vk_bot_admin.settings")
     django.setup()
     application = get_wsgi_application()
-    call_command('runserver', '127.0.0.1:8000')
+    proccess1 = Process(target=call_command, args=('runserver', '127.0.0.1:8000'))
 
     # запуск приложения
-    run_app(
+    proccess2 = Process(target=run_app, args=(
         setup_app(
             config_path=os.path.join(
                 os.path.dirname(os.path.realpath(__file__)), "config.yaml"
             )
-        )
-    )
+        ),
+    ))
+
+    proccess1.start()
+    proccess2.start()
+
+    proccess1.join()
+    proccess2.join()
+
