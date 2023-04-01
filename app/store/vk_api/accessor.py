@@ -128,7 +128,7 @@ class VkApiAccessor(BaseAccessor):
                             ),
                         )
                     )
-            await self.app.store.bots_manager.handle_updates(updates)
+                await self.app.database.queue.put(update)
 
     async def send_message(self, message: Message) -> None:
         async with self.session.get(

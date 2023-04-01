@@ -15,8 +15,9 @@ class BotManager:
         self.bot = None
         self.logger = getLogger("handler")
 
-    async def handle_updates(self, updates: list[Update | UpdateEvent]):
-        for update in updates:
+    async def handle_updates(self):
+        while True:
+            update = await self.app.database.queue.get()
             if update.type == "message_new":
                 if update.object.body == "/bot":
                     await self.app.store.vk_api.start_message(
