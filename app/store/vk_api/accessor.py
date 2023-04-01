@@ -1,9 +1,10 @@
-import asyncio
 import json
 import random
 import typing
 from typing import Optional
 
+import aioamqp
+from aioamqp import channel
 from aiohttp import TCPConnector
 from aiohttp.client import ClientSession
 
@@ -23,6 +24,7 @@ from app.store.vk_api.keyboards import (
 )
 from app.store.vk_api.poller import Poller
 from app.users.dataclassess import ChatUser
+from app.web.utils import update_to_json, update_event_to_json
 
 if typing.TYPE_CHECKING:
     from app.web.app import Application
@@ -38,16 +40,22 @@ class VkApiAccessor(BaseAccessor):
         self.server: Optional[str] = None
         self.poller: Optional[Poller] = None
         self.ts: Optional[int] = None
+        self.channel: Optional[channel] = None
 
     async def connect(self, app: "Application"):
         self.session = ClientSession(connector=TCPConnector(verify_ssl=False))
+        transport, protocol = await aioamqp.connect(host='127.0.0.1', port=5672, login='guest', password='guest')
+        self.logger.info("Transport got")
+        self.channel = await protocol.channel()
+        self.logger.info("Channel got")
+        await self.channel.queue_declare(queue_name='to_worker', durable=True)
+        self.logger.info("Queue declared")
         try:
             await self._get_long_poll_service()
         except Exception as e:
             self.logger.error("Exception", exc_info=e)
         self.poller = Poller(app.store)
         self.logger.info("start polling")
-        await self.poller.start()
 
     async def disconnect(self, app: "Application"):
         if self.session:
@@ -98,10 +106,9 @@ class VkApiAccessor(BaseAccessor):
             self.logger.info(data)
             self.ts = data["ts"]
             raw_updates = data.get("updates", [])
-            updates = []
             for update in raw_updates:
                 if update["type"] == "message_new":
-                    updates.append(
+                    to_send = (
                         Update(
                             type=update["type"],
                             object=UpdateObject(
@@ -112,8 +119,14 @@ class VkApiAccessor(BaseAccessor):
                             ),
                         )
                     )
+                    await self.channel.basic_publish(
+                        payload=json.dumps(update_to_json(to_send)).encode(),
+                        exchange_name='',
+                        routing_key='to_worker'
+                    )
+
                 elif update["type"] == "message_event":
-                    updates.append(
+                    to_send = (
                         UpdateEvent(
                             type=update["type"],
                             object=UpdateEventObject(
@@ -128,7 +141,11 @@ class VkApiAccessor(BaseAccessor):
                             ),
                         )
                     )
-                await self.app.database.queue.put(update)
+                    await self.channel.basic_publish(
+                        payload=json.dumps(update_event_to_json(to_send)).encode(),
+                        exchange_name='',
+                        routing_key='to_worker'
+                    )
 
     async def send_message(self, message: Message) -> None:
         async with self.session.get(

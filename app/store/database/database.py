@@ -1,6 +1,7 @@
 import asyncio
 from typing import Optional, TYPE_CHECKING
 
+import pika
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -21,11 +22,14 @@ class Database:
         self._db: Optional[declarative_base] = None
         self.session: Optional[AsyncSession] = None
         self.queue: Optional = None
+        self.channel: Optional = None
 
     async def connect(self, *_: list, **__: dict) -> None:
         self._db = db
         self._engine = create_async_engine(self.app.config.database.url)
         self.queue = asyncio.Queue()
+        connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+        self.channel = connection.channel()
 
     async def disconnect(self, *_: list, **__: dict) -> None:
         try:
