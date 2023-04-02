@@ -23,7 +23,6 @@ from app.store.vk_api.keyboards import (
     create_new_poll_keyboard,
 )
 from app.store.vk_api.poller import Poller
-from app.users.dataclassess import ChatUser
 from app.web.utils import update_to_json, update_event_to_json, json_to_message
 
 if typing.TYPE_CHECKING:
@@ -197,30 +196,6 @@ class VkApiAccessor(BaseAccessor):
         ) as resp:
             data = await resp.json()
             self.logger.info(data)
-
-    async def get_all_users_in_chat_by_peer_id(
-        self, peer_id: int
-    ) -> list[ChatUser] | None:
-        async with self.session.get(
-            self._build_query(
-                API_PATH,
-                "messages.getConversationMembers",
-                params={
-                    "peer_id": peer_id,
-                    "access_token": self.app.config.bot.token,
-                },
-            )
-        ) as resp:
-            data = await resp.json()
-            users = data["response"]["profiles"]
-            user_objects = []
-            for user in users:
-                user_objects.append(
-                    ChatUser(user["id"], user["first_name"], user["last_name"])
-                )
-            if len(user_objects) > 0:
-                return user_objects
-            return None
 
     async def start_message(self, message: Message) -> None:
         async with self.session.get(
