@@ -5,7 +5,13 @@ from aiohttp.web import json_response as aiohttp_json_response
 from aiohttp.web_response import Response
 
 from app.game.models import GameDC, PlayerDC
-from app.store.vk_api.dataclasses import Update, UpdateEvent, UpdateObject, UpdateEventObject, Message
+from app.store.vk_api.dataclasses import (
+    Update,
+    UpdateEvent,
+    UpdateObject,
+    UpdateEventObject,
+    Message,
+)
 from app.users.dataclassess import ChatUser
 
 
@@ -83,7 +89,7 @@ def update_to_json(update: Update):
             "user_id": update.object.user_id,
             "body": update.object.body,
             "peer_id": update.object.peer_id,
-        }
+        },
     }
 
 
@@ -97,12 +103,12 @@ def update_event_to_json(update: UpdateEvent):
             "event_id": update.object.event_id,
             "group_id": update.object.group_id,
             "conversation_message_id": update.object.conversation_message_id,
-        }
+        },
     }
 
 
 def json_to_update(data):
-    if data['type'] == "message_new":
+    if data["type"] == "message_new":
         return Update(
             type=data["type"],
             object=UpdateObject(
@@ -128,7 +134,14 @@ def json_to_update(data):
         )
 
 
-def message_to_json(message: Message, function: str, winner: PlayerDC = 0, text: str = "", players: int = 0, variants: list[dict] = 0):
+def message_to_json(
+    message: Message,
+    function: str,
+    winner: PlayerDC = 0,
+    text: str = "",
+    players: int = 0,
+    variants: list[dict] = 0,
+):
     out = {
         "function": function,
         "message": {

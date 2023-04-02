@@ -33,7 +33,9 @@ API_PATH = "https://api.vk.com/method/"
 
 
 class VkApiAccessor(BaseAccessor):
-    def __init__(self, app: "Application", is_for_poller: bool = True, *args, **kwargs):
+    def __init__(
+        self, app: "Application", is_for_poller: bool = True, *args, **kwargs
+    ):
         super().__init__(app, *args, **kwargs)
         self.session: Optional[ClientSession] = None
         self.key: Optional[str] = None
@@ -45,11 +47,13 @@ class VkApiAccessor(BaseAccessor):
 
     async def connect(self, app: "Application"):
         self.session = ClientSession(connector=TCPConnector(verify_ssl=False))
-        transport, protocol = await aioamqp.connect(host='127.0.0.1', port=5672, login='guest', password='guest')
+        transport, protocol = await aioamqp.connect(
+            host="127.0.0.1", port=5672, login="guest", password="guest"
+        )
         self.logger.info("Transport got")
         self.channel = await protocol.channel()
         self.logger.info("Channel got")
-        await self.channel.queue_declare(queue_name='to_worker', durable=True)
+        await self.channel.queue_declare(queue_name="to_worker", durable=True)
         self.logger.info("Queue declared")
         if self.is_for_poller:
             try:
@@ -111,47 +115,45 @@ class VkApiAccessor(BaseAccessor):
             raw_updates = data.get("updates", [])
             for update in raw_updates:
                 if update["type"] == "message_new":
-                    to_send = (
-                        Update(
-                            type=update["type"],
-                            object=UpdateObject(
-                                id=update["object"]["message"]["id"],
-                                user_id=update["object"]["message"]["from_id"],
-                                body=update["object"]["message"]["text"],
-                                peer_id=update["object"]["message"]["peer_id"],
-                            ),
-                        )
+                    to_send = Update(
+                        type=update["type"],
+                        object=UpdateObject(
+                            id=update["object"]["message"]["id"],
+                            user_id=update["object"]["message"]["from_id"],
+                            body=update["object"]["message"]["text"],
+                            peer_id=update["object"]["message"]["peer_id"],
+                        ),
                     )
                     await self.channel.basic_publish(
                         payload=json.dumps(update_to_json(to_send)).encode(),
-                        exchange_name='',
-                        routing_key='to_worker'
+                        exchange_name="",
+                        routing_key="to_worker",
                     )
 
                 elif update["type"] == "message_event":
-                    to_send = (
-                        UpdateEvent(
-                            type=update["type"],
-                            object=UpdateEventObject(
-                                user_id=update["object"]["user_id"],
-                                payload=update["object"]["payload"],
-                                peer_id=update["object"]["peer_id"],
-                                event_id=update["object"]["event_id"],
-                                group_id=update["group_id"],
-                                conversation_message_id=update["object"][
-                                    "conversation_message_id"
-                                ],
-                            ),
-                        )
+                    to_send = UpdateEvent(
+                        type=update["type"],
+                        object=UpdateEventObject(
+                            user_id=update["object"]["user_id"],
+                            payload=update["object"]["payload"],
+                            peer_id=update["object"]["peer_id"],
+                            event_id=update["object"]["event_id"],
+                            group_id=update["group_id"],
+                            conversation_message_id=update["object"][
+                                "conversation_message_id"
+                            ],
+                        ),
                     )
                     await self.channel.basic_publish(
-                        payload=json.dumps(update_event_to_json(to_send)).encode(),
-                        exchange_name='',
-                        routing_key='to_worker'
+                        payload=json.dumps(
+                            update_event_to_json(to_send)
+                        ).encode(),
+                        exchange_name="",
+                        routing_key="to_worker",
                     )
 
     async def handle_updates(self):
-        await self.channel.basic_consume(self.callback, queue_name='to_sender')
+        await self.channel.basic_consume(self.callback, queue_name="to_sender")
 
     async def callback(self, channel, body, envelope, properties):
         data = json.loads(body)
@@ -239,7 +241,9 @@ class VkApiAccessor(BaseAccessor):
             data = await resp.json()
             self.logger.info(data)
 
-    async def create_new_poll(self, message: Message, variants: list[dict]) -> None:
+    async def create_new_poll(
+        self, message: Message, variants: list[dict]
+    ) -> None:
         async with self.session.get(
             self._build_query(
                 API_PATH,

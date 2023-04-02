@@ -16,5 +16,6 @@ async def main():
     while True:
         await vk_api.handle_updates()
 
+
 if __name__ == "__main__":
     asyncio.run(main())

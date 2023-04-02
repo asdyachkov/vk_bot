@@ -28,7 +28,9 @@ class Database:
         self._db = db
         self._engine = create_async_engine(self.app.config.database.url)
         self.queue = asyncio.Queue()
-        connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+        connection = pika.BlockingConnection(
+            pika.ConnectionParameters("localhost")
+        )
         self.channel = connection.channel()
 
     async def disconnect(self, *_: list, **__: dict) -> None:
