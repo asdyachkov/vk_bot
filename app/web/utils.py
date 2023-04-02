@@ -140,7 +140,10 @@ def message_to_json(
     winner: PlayerDC = 0,
     text: str = "",
     players: int = 0,
+    game_id: int = 0,
+    round_id: int = 0,
     variants: list[dict] = 0,
+    variants_int: list[int] = 0,
 ):
     out = {
         "function": function,
@@ -154,9 +157,13 @@ def message_to_json(
         },
         "text": text,
         "players": players,
+        "game_id": game_id,
+        "round_id": round_id,
     }
     if winner != 0:
         out["winner"] = player_to_json(winner)
+    if variants_int != 0:
+        out["variants_int"] = variants_int
     if variants != 0:
         out["variants"] = [player for player in variants]
     return out

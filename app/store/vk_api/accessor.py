@@ -171,7 +171,6 @@ class VkApiAccessor(BaseAccessor):
         elif update["function"] == "edit_recruiting_players":
             await self.edit_recruiting_players(message, update["players"])
         elif update["function"] == "create_new_poll":
-            print(update["variants"])
             await self.create_new_poll(message, update["variants"])
         elif update["function"] == "start_game":
             await self.start_game(message)
@@ -231,7 +230,7 @@ class VkApiAccessor(BaseAccessor):
                 params={
                     "random_id": random.randint(1, 2**32),
                     "peer_id": message.peer_id,
-                    "message": "Чтобы начать игру, необходмо набрать достаточное количество участников.",
+                    "message": "❗ Чтобы начать игру, необходмо набрать достаточное количество участников ❗",
                     "access_token": self.app.config.bot.token,
                     "chat_id": 86,
                     "keyboard": create_start_keyboard(),
@@ -250,7 +249,7 @@ class VkApiAccessor(BaseAccessor):
                 "messages.edit",
                 params={
                     "peer_id": message.peer_id,
-                    "message": f"Выберите, чей аватар лучше. Голосование длиться 1 минуту.",
+                    "message": f"Выберите, чей аватар лучше.%0a%0aГолосование длиться 1 минуту. 😉",
                     "conversation_message_id": int(
                         message.conversation_message_id
                     ),
@@ -292,7 +291,7 @@ class VkApiAccessor(BaseAccessor):
                 "messages.edit",
                 params={
                     "peer_id": message.peer_id,
-                    "message": f"Нажмите на кнопку ниже, чтобы запустить регистрацию. Игра начнется через 2 минуты после начала регистрации",
+                    "message": f"Нажмите на кнопку ниже, чтобы запустить регистрацию%0a%0a❗ Игра начнется через минуту после начала регистрации",
                     "conversation_message_id": int(
                         message.conversation_message_id
                     ),
@@ -314,7 +313,7 @@ class VkApiAccessor(BaseAccessor):
                 "messages.edit",
                 params={
                     "peer_id": message.peer_id,
-                    "message": f"Нажмите на кнопку ниже, чтобы зарегестрироваться. Всего участников: {players}",
+                    "message": f"Нажмите на кнопку ниже, чтобы зарегестрироваться%0a%0aВсего участников: {players} 😲",
                     "conversation_message_id": int(
                         message.conversation_message_id
                     ),
@@ -336,7 +335,7 @@ class VkApiAccessor(BaseAccessor):
                 "messages.edit",
                 params={
                     "peer_id": message.peer_id,
-                    "message": f"Игра была отменена.",
+                    "message": f"Игра была отменена 😔",
                     "conversation_message_id": int(
                         message.conversation_message_id
                     ),
@@ -398,7 +397,7 @@ class VkApiAccessor(BaseAccessor):
                 "messages.edit",
                 params={
                     "peer_id": message.peer_id,
-                    "message": f"Регистрация окончена. Приятной игры!",
+                    "message": f"Регистрация окончена!%0a%0aПриятной игры!❤",
                     "conversation_message_id": int(
                         message.conversation_message_id
                     ),
@@ -417,7 +416,7 @@ class VkApiAccessor(BaseAccessor):
                 "messages.edit",
                 params={
                     "peer_id": message.peer_id,
-                    "message": f"Игра закончилась. Победитель {winner['name']} {winner['last_name']}",
+                    "message": f"Игра закончилась!%0a%0a👑 Победитель {winner['name']} {winner['last_name']} 👑",
                     "conversation_message_id": int(
                         message.conversation_message_id
                     ),
