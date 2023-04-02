@@ -6,10 +6,11 @@ from typing import Optional
 
 import aioamqp
 from aioamqp import channel
+from aiohttp import ClientSession, TCPConnector
 
 from app.game.models import GameDC, RoundDC
 from app.store.vk_api.dataclasses import Message
-from app.web.utils import json_to_update
+from app.web.utils import json_to_update, message_to_json
 
 if typing.TYPE_CHECKING:
     from app.web.app import Application
@@ -18,35 +19,45 @@ if typing.TYPE_CHECKING:
 class BotManager:
     def __init__(self, app: "Application"):
         self.app = app
-        self.bot = None
         self.logger = getLogger("handler")
         self.channel: Optional[channel] = None
+        self.channel_for_sending: Optional[channel] = None
+        self.session: Optional[ClientSession] = None
 
     async def connect(self):
+        await self.app.database.connect()
         transport, protocol = await aioamqp.connect(host='127.0.0.1', port=5672, login='guest', password='guest')
         self.channel = await protocol.channel()
+        self.channel_for_sending = await protocol.channel()
         self.logger.info("Channel got")
         await self.channel.queue_declare(queue_name='to_worker', durable=True)
+        await self.channel_for_sending.queue_declare(queue_name='to_sender', durable=True)
         self.logger.info("Queue declared")
         self.logger.info("Working....")
 
     async def handle_updates(self):
-        await self.channel.basic_consume(self.callback, queue_name='to_worker', no_ack=True)
+        await self.channel.basic_consume(self.callback, queue_name='to_worker')
 
     async def callback(self, channel, body, envelope, properties):
         data = json.loads(body)
         update = json_to_update(data)
         await self.proccessing_update(update)
+        await channel.basic_client_ack(delivery_tag=envelope.delivery_tag)
 
     async def proccessing_update(self, update):
         if update.type == "message_new":
             if update.object.body == "/bot":
-                await self.app.store.vk_api.start_message(
-                    Message(
-                        user_id=update.object.user_id,
-                        text=update.object.body,
-                        peer_id=update.object.peer_id,
-                    )
+                await self.channel_for_sending.basic_publish(
+                    payload=json.dumps(message_to_json(
+                        message=Message(
+                            user_id=update.object.user_id,
+                            text=update.object.body,
+                            peer_id=update.object.peer_id,
+                        ),
+                        function="start_message"
+                        )).encode(),
+                    exchange_name='',
+                    routing_key='to_sender'
                 )
         elif update.type == "message_event":
             if "callback_data" in update.object.payload.keys():
@@ -60,23 +71,33 @@ class BotManager:
                         if not await self.app.store.game.is_game_was_started_in_chat(
                             update.object.group_id
                         ):
-                            await self.app.store.vk_api.answer_pop_up_notification(
-                                Message(
-                                    user_id=update.object.user_id,
-                                    text="",
-                                    peer_id=update.object.peer_id,
-                                    event_id=update.object.event_id,
-                                ),
-                                text="Регистрация начата",
+                            await self.channel_for_sending.basic_publish(
+                                payload=json.dumps(message_to_json(
+                                    message=Message(
+                                        user_id=update.object.user_id,
+                                        text="",
+                                        peer_id=update.object.peer_id,
+                                        event_id=update.object.event_id,
+                                    ),
+                                    text="Регистрация начата",
+                                    function="answer_pop_up_notification"
+                                )).encode(),
+                                exchange_name='',
+                                routing_key='to_sender'
                             )
-                            await self.app.store.vk_api.start_recruiting_players(
-                                Message(
-                                    user_id=update.object.user_id,
-                                    text="",
-                                    peer_id=update.object.peer_id,
-                                    event_id=update.object.event_id,
-                                    conversation_message_id=update.object.conversation_message_id,
-                                )
+                            await self.channel_for_sending.basic_publish(
+                                payload=json.dumps(message_to_json(
+                                    message=Message(
+                                        user_id=update.object.user_id,
+                                        text="",
+                                        peer_id=update.object.peer_id,
+                                        event_id=update.object.event_id,
+                                        conversation_message_id=update.object.conversation_message_id,
+                                    ),
+                                    function="start_recruiting_players"
+                                )).encode(),
+                                exchange_name='',
+                                routing_key='to_sender'
                             )
                             game_id = await self.app.store.game.create_game(
                                 GameDC(chat_id=int(update.object.group_id))
@@ -100,7 +121,24 @@ class BotManager:
                                     )
                                 )
                         else:
-                            await self.app.store.vk_api.answer_pop_up_notification(
+                            await self.channel_for_sending.basic_publish(
+                                payload=json.dumps(message_to_json(
+                                    message=Message(
+                                        user_id=update.object.user_id,
+                                        text="",
+                                        peer_id=update.object.peer_id,
+                                        event_id=update.object.event_id,
+                                        conversation_message_id=update.object.conversation_message_id,
+                                    ),
+                                    text="Игра уже идет",
+                                    function="answer_pop_up_notification"
+                                )).encode(),
+                                exchange_name='',
+                                routing_key='to_sender'
+                            )
+                    else:
+                        await self.channel_for_sending.basic_publish(
+                            payload=json.dumps(message_to_json(
                                 message=Message(
                                     user_id=update.object.user_id,
                                     text="",
@@ -108,18 +146,11 @@ class BotManager:
                                     event_id=update.object.event_id,
                                     conversation_message_id=update.object.conversation_message_id,
                                 ),
-                                text="Игра уже идет",
-                            )
-                    else:
-                        await self.app.store.vk_api.answer_pop_up_notification(
-                            message=Message(
-                                user_id=update.object.user_id,
-                                text="",
-                                peer_id=update.object.peer_id,
-                                event_id=update.object.event_id,
-                                conversation_message_id=update.object.conversation_message_id,
-                            ),
-                            text="Набор в игру уже ведется",
+                                text="Набор в игру уже ведется",
+                                function="answer_pop_up_notification"
+                            )).encode(),
+                            exchange_name='',
+                            routing_key='to_sender'
                         )
                 elif update.object.payload["callback_data"] == "add me":
                     canceling_add = False
@@ -157,15 +188,20 @@ class BotManager:
                                         players = await self.app.store.game.get_players_by_round_id(
                                             round_id
                                         )
-                                        await self.app.store.vk_api.edit_recruiting_players(
-                                            Message(
-                                                user_id=update.object.user_id,
-                                                text="",
-                                                peer_id=update.object.peer_id,
-                                                event_id=update.object.event_id,
-                                                conversation_message_id=update.object.conversation_message_id,
-                                            ),
-                                            players,
+                                        await self.channel_for_sending.basic_publish(
+                                            payload=json.dumps(message_to_json(
+                                                message=Message(
+                                                    user_id=update.object.user_id,
+                                                    text="",
+                                                    peer_id=update.object.peer_id,
+                                                    event_id=update.object.event_id,
+                                                    conversation_message_id=update.object.conversation_message_id,
+                                                ),
+                                                players=players,
+                                                function="edit_recruiting_players"
+                                            )).encode(),
+                                            exchange_name='',
+                                            routing_key='to_sender'
                                         )
                                     else:
                                         canceling_add = True
@@ -176,24 +212,34 @@ class BotManager:
                         else:
                             canceling_add = True
                         if canceling_add:
-                            await self.app.store.vk_api.answer_pop_up_notification(
-                                Message(
+                            await self.channel_for_sending.basic_publish(
+                                payload=json.dumps(message_to_json(
+                                    message=Message(
+                                        user_id=update.object.user_id,
+                                        text="",
+                                        peer_id=update.object.peer_id,
+                                        event_id=update.object.event_id,
+                                    ),
+                                    text="Вы уже зарегестрированы в этой игре",
+                                    function="answer_pop_up_notification"
+                                )).encode(),
+                                exchange_name='',
+                                routing_key='to_sender'
+                            )
+                    else:
+                        await self.channel_for_sending.basic_publish(
+                            payload=json.dumps(message_to_json(
+                                message=Message(
                                     user_id=update.object.user_id,
                                     text="",
                                     peer_id=update.object.peer_id,
                                     event_id=update.object.event_id,
                                 ),
-                                text="Вы уже зарегестрированы в этой игре",
-                            )
-                    else:
-                        await self.app.store.vk_api.answer_pop_up_notification(
-                            Message(
-                                user_id=update.object.user_id,
-                                text="",
-                                peer_id=update.object.peer_id,
-                                event_id=update.object.event_id,
-                            ),
-                            text="Игра уже началась",
+                                text="Игра уже началась",
+                                function="answer_pop_up_notification"
+                            )).encode(),
+                            exchange_name='',
+                            routing_key='to_sender'
                         )
                 elif update.object.payload["callback_data"] == "delete me":
                     canceling_delete = False
@@ -216,15 +262,20 @@ class BotManager:
                                 players = await self.app.store.game.get_players_by_round_id(
                                     round_id
                                 )
-                                await self.app.store.vk_api.edit_recruiting_players(
-                                    Message(
-                                        user_id=update.object.user_id,
-                                        text="",
-                                        peer_id=update.object.peer_id,
-                                        event_id=update.object.event_id,
-                                        conversation_message_id=update.object.conversation_message_id,
-                                    ),
-                                    players,
+                                await self.channel_for_sending.basic_publish(
+                                    payload=json.dumps(message_to_json(
+                                        message=Message(
+                                            user_id=update.object.user_id,
+                                            text="",
+                                            peer_id=update.object.peer_id,
+                                            event_id=update.object.event_id,
+                                            conversation_message_id=update.object.conversation_message_id,
+                                        ),
+                                        players=players,
+                                        function="edit_recruiting_players"
+                                    )).encode(),
+                                    exchange_name='',
+                                    routing_key='to_sender'
                                 )
                             else:
                                 canceling_delete = True
@@ -233,14 +284,19 @@ class BotManager:
                     else:
                         canceling_delete = True
                     if canceling_delete:
-                        await self.app.store.vk_api.answer_pop_up_notification(
-                            Message(
-                                user_id=update.object.user_id,
-                                text="",
-                                peer_id=update.object.peer_id,
-                                event_id=update.object.event_id,
-                            ),
-                            text="Вы еще не зарегестрированы в этой игре",
+                        await self.channel_for_sending.basic_publish(
+                            payload=json.dumps(message_to_json(
+                                message=Message(
+                                    user_id=update.object.user_id,
+                                    text="",
+                                    peer_id=update.object.peer_id,
+                                    event_id=update.object.event_id,
+                                ),
+                                text="Вы еще не зарегестрированы в этой игре",
+                                function="answer_pop_up_notification"
+                            )).encode(),
+                            exchange_name='',
+                            routing_key='to_sender'
                         )
                 elif (
                     update.object.payload["callback_data"] == "delete games"
@@ -304,26 +360,41 @@ class BotManager:
                                 round_state, round_id, for_update=True
                             )
                         )
-                        await self.app.store.vk_api.create_new_poll(
-                            message,
-                            variants,
+                        await self.channel_for_sending.basic_publish(
+                            payload=json.dumps(message_to_json(
+                                message=message,
+                                variants=variants,
+                                function="create_new_poll"
+                            )).encode(),
+                            exchange_name='',
+                            routing_key='to_sender'
                         )
-                        await self.app.store.vk_api.answer_pop_up_notification(
-                            message,
-                            text="Ваш голос учтен",
+                        await self.channel_for_sending.basic_publish(
+                            payload=json.dumps(message_to_json(
+                                message=message,
+                                text="Ваш голос учтен",
+                                function="answer_pop_up_notification"
+                            )).encode(),
+                            exchange_name='',
+                            routing_key='to_sender'
                         )
                         await self.app.store.game.make_user_already_voited(
                             round_id, update.object.user_id
                         )
                     else:
-                        await self.app.store.vk_api.answer_pop_up_notification(
-                            Message(
-                                user_id=update.object.user_id,
-                                text="",
-                                peer_id=update.object.peer_id,
-                                event_id=update.object.event_id,
-                            ),
-                            text="Голосовать могут только пользователи, участвующие в игре и только один раз за раунд",
+                        await self.channel_for_sending.basic_publish(
+                            payload=json.dumps(message_to_json(
+                                message=Message(
+                                    user_id=update.object.user_id,
+                                    text="",
+                                    peer_id=update.object.peer_id,
+                                    event_id=update.object.event_id,
+                                ),
+                                text="Голосовать могут только пользователи, участвующие в игре и только один раз за раунд",
+                                function="answer_pop_up_notification"
+                            )).encode(),
+                            exchange_name='',
+                            routing_key='to_sender'
                         )
                 elif (
                     update.object.payload["callback_data"]
@@ -367,7 +438,14 @@ class BotManager:
                 if players_count:
                     if players_count > 1:
                         await self.app.store.game.start_game(game_id)
-                        await self.app.store.vk_api.start_game(message)
+                        await self.channel_for_sending.basic_publish(
+                            payload=json.dumps(message_to_json(
+                                message=message,
+                                function="start_game"
+                            )).encode(),
+                            exchange_name='',
+                            routing_key='to_sender'
+                        )
                         await self.send_game_message(message)
                     else:
                         canceling_game = True
@@ -380,8 +458,14 @@ class BotManager:
         if canceling_game and is_timer_end and game_is_avaible:
             await self.cancel_game(message, game_id)
         elif game_is_avaible and canceling_game:
-            await self.app.store.vk_api.answer_pop_up_notification(
-                message=message, text="Недостаточно игроков, чтобы начать игру"
+            await self.channel_for_sending.basic_publish(
+                payload=json.dumps(message_to_json(
+                    message=message,
+                    text="Недостаточно игроков, чтобы начать игру",
+                    function="answer_pop_up_notification"
+                )).encode(),
+                exchange_name='',
+                routing_key='to_sender'
             )
 
     async def cancel_game(self, message: Message, game_id: int):
@@ -392,12 +476,23 @@ class BotManager:
             game_id, round_id
         )
         if is_game_deleted:
-            await self.app.store.vk_api.edit_recruiting_players_game_delete(
-                message
+            await self.channel_for_sending.basic_publish(
+                payload=json.dumps(message_to_json(
+                    message=message,
+                    function="edit_recruiting_players_game_delete"
+                )).encode(),
+                exchange_name='',
+                routing_key='to_sender'
             )
         else:
-            await self.app.store.vk_api.answer_pop_up_notification(
-                message, text="Не удалось отменить игру"
+            await self.channel_for_sending.basic_publish(
+                payload=json.dumps(message_to_json(
+                    message=message,
+                    text="Не удалось отменить игру",
+                    function="answer_pop_up_notification"
+                )).encode(),
+                exchange_name='',
+                routing_key='to_sender'
             )
 
     async def send_game_message(self, message: Message):
@@ -433,7 +528,15 @@ class BotManager:
                 else:
                     await self.end_game(round_state, round_id, message, game_id)
             elif len(variants) == 2:
-                await self.app.store.vk_api.create_new_poll(message, variants)
+                await self.channel_for_sending.basic_publish(
+                    payload=json.dumps(message_to_json(
+                        message=message,
+                        variants=variants,
+                        function="create_new_poll"
+                    )).encode(),
+                    exchange_name='',
+                    routing_key='to_sender'
+                )
                 players_ids = (
                     await self.app.store.game.get_players_id_by_list_of_vk_id(
                         round_id, variants
@@ -513,7 +616,15 @@ class BotManager:
             winner.vk_id
         )
         await self.app.store.game.end_game(game_id)
-        await self.app.store.vk_api.end_game(message, winner)
+        await self.channel_for_sending.basic_publish(
+            payload=json.dumps(message_to_json(
+                message=message,
+                winner=winner,
+                function="end_game"
+            )).encode(),
+            exchange_name='',
+            routing_key='to_sender'
+        )
 
     async def show_leaderboard(self, message: Message):
         leaders = await self.app.store.game.get_3_best_leaders()
@@ -526,4 +637,11 @@ class BotManager:
         else:
             message_text = "Ни одна игра еще не была завершена"
         message.text = message_text
-        await self.app.store.vk_api.edit_message_to_leaderboard(message)
+        await self.channel_for_sending.basic_publish(
+            payload=json.dumps(message_to_json(
+                message=message,
+                function="edit_message_to_leaderboard"
+            )).encode(),
+            exchange_name='',
+            routing_key='to_sender'
+        )

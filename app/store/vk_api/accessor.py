@@ -4,7 +4,7 @@ import typing
 from typing import Optional
 
 import aioamqp
-from aioamqp import channel
+from aioamqp import channel, envelope
 from aiohttp import TCPConnector
 from aiohttp.client import ClientSession
 
@@ -24,7 +24,7 @@ from app.store.vk_api.keyboards import (
 )
 from app.store.vk_api.poller import Poller
 from app.users.dataclassess import ChatUser
-from app.web.utils import update_to_json, update_event_to_json
+from app.web.utils import update_to_json, update_event_to_json, json_to_update, json_to_message
 
 if typing.TYPE_CHECKING:
     from app.web.app import Application
@@ -33,7 +33,7 @@ API_PATH = "https://api.vk.com/method/"
 
 
 class VkApiAccessor(BaseAccessor):
-    def __init__(self, app: "Application", *args, **kwargs):
+    def __init__(self, app: "Application", is_for_poller: bool = True, *args, **kwargs):
         super().__init__(app, *args, **kwargs)
         self.session: Optional[ClientSession] = None
         self.key: Optional[str] = None
@@ -41,6 +41,7 @@ class VkApiAccessor(BaseAccessor):
         self.poller: Optional[Poller] = None
         self.ts: Optional[int] = None
         self.channel: Optional[channel] = None
+        self.is_for_poller = is_for_poller
 
     async def connect(self, app: "Application"):
         self.session = ClientSession(connector=TCPConnector(verify_ssl=False))
@@ -50,12 +51,14 @@ class VkApiAccessor(BaseAccessor):
         self.logger.info("Channel got")
         await self.channel.queue_declare(queue_name='to_worker', durable=True)
         self.logger.info("Queue declared")
-        try:
-            await self._get_long_poll_service()
-        except Exception as e:
-            self.logger.error("Exception", exc_info=e)
-        self.poller = Poller(app.store)
-        self.logger.info("start polling")
+        if self.is_for_poller:
+            try:
+                await self._get_long_poll_service()
+            except Exception as e:
+                self.logger.error("Exception", exc_info=e)
+            self.poller = Poller(app.store)
+            self.logger.info("start polling")
+        self.logger.info("Working....")
 
     async def disconnect(self, app: "Application"):
         if self.session:
@@ -146,6 +149,35 @@ class VkApiAccessor(BaseAccessor):
                         exchange_name='',
                         routing_key='to_worker'
                     )
+
+    async def handle_updates(self):
+        await self.channel.basic_consume(self.callback, queue_name='to_sender')
+
+    async def callback(self, channel, body, envelope, properties):
+        data = json.loads(body)
+        await self.proccessing_update(data)
+        await channel.basic_client_ack(delivery_tag=envelope.delivery_tag)
+
+    async def proccessing_update(self, update):
+        message = json_to_message(update)
+        if update["function"] == "start_message":
+            await self.start_message(message)
+        elif update["function"] == "answer_pop_up_notification":
+            await self.answer_pop_up_notification(message, update["text"])
+        elif update["function"] == "start_recruiting_players":
+            await self.start_recruiting_players(message)
+        elif update["function"] == "edit_recruiting_players":
+            await self.edit_recruiting_players(message, update["players"])
+        elif update["function"] == "create_new_poll":
+            await self.create_new_poll(message, update["variants"])
+        elif update["function"] == "start_game":
+            await self.start_game(message)
+        elif update["function"] == "edit_recruiting_players_game_delete":
+            await self.edit_recruiting_players_game_delete(message)
+        elif update["function"] == "end_game":
+            await self.end_game(message, update["winner"])
+        elif update["function"] == "edit_message_to_leaderboard":
+            await self.edit_message_to_leaderboard(message)
 
     async def send_message(self, message: Message) -> None:
         async with self.session.get(

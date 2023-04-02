@@ -4,7 +4,7 @@ from aiohttp.web import json_response as aiohttp_json_response
 from aiohttp.web_response import Response
 
 from app.game.models import GameDC, PlayerDC
-from app.store.vk_api.dataclasses import Update, UpdateEvent, UpdateObject, UpdateEventObject
+from app.store.vk_api.dataclasses import Update, UpdateEvent, UpdateObject, UpdateEventObject, Message
 from app.users.dataclassess import ChatUser
 
 
@@ -117,9 +117,52 @@ def json_to_update(data):
                 payload=data["object"]["payload"],
                 peer_id=data["object"]["peer_id"],
                 event_id=data["object"]["event_id"],
-                group_id=data["group_id"],
+                group_id=data["object"]["group_id"],
                 conversation_message_id=data["object"][
                     "conversation_message_id"
                 ],
             ),
         )
+
+
+def message_to_json(message: Message, function: str, winner: PlayerDC = 0, text: str = "", players: int = 0, variants: list[PlayerDC] = 0):
+    out = {
+        "function": function,
+        "message": {
+            "user_id": message.user_id,
+            "text": message.text,
+            "peer_id": message.peer_id,
+            "event_id": message.event_id,
+            "group_id": message.group_id,
+            "conversation_message_id": message.conversation_message_id,
+        },
+        "text": text,
+        "players": players,
+    }
+    if winner != 0:
+        out["winner"] = player_to_json(winner)
+    if variants != 0:
+        out["variants"] = {player for player in players_to_json(variants)}
+    return out
+
+
+def player_to_json(player: PlayerDC):
+    return {
+        "vk_id": player.vk_id,
+        "is_admin": player.is_admin,
+        "name": player.name,
+        "last_name": player.last_name,
+        "photo_id": player.photo_id,
+        "round_id": player.round_id,
+    }
+
+
+def json_to_message(update):
+    return Message(
+        user_id=update["message"]["user_id"],
+        text=update["message"]["text"],
+        peer_id=update["message"]["peer_id"],
+        event_id=update["message"]["event_id"],
+        group_id=update["message"]["group_id"],
+        conversation_message_id=update["message"]["conversation_message_id"],
+    )
