@@ -1,3 +1,4 @@
+import json
 from typing import Any, Optional
 
 from aiohttp.web import json_response as aiohttp_json_response
@@ -50,17 +51,19 @@ def users_to_json(users: list[ChatUser]):
     return json_users
 
 
-def players_to_json(players: list[PlayerDC]):
+def players_to_json(players: list[PlayerDC]) -> list[dict]:
     json_users = []
     for player in players:
-        json_users.append(
-            {
-                "vk_id": player.vk_id,
-                "name": player.name,
-                "last_name": player.last_name,
-                "score": player.score,
-            }
-        )
+        dict_to_append = {}
+        dict_to_append["vk_id"] = player.vk_id
+        dict_to_append["is_admin"] = player.is_admin
+        dict_to_append["name"] = player.name
+        dict_to_append["last_name"] = player.last_name
+        dict_to_append["photo_id"] = player.photo_id
+        dict_to_append["score"] = player.score
+        dict_to_append["state"] = player.state
+        dict_to_append["round_id"] = player.round_id
+        json_users.append(dict_to_append)
     return json_users
 
 
@@ -125,7 +128,7 @@ def json_to_update(data):
         )
 
 
-def message_to_json(message: Message, function: str, winner: PlayerDC = 0, text: str = "", players: int = 0, variants: list[PlayerDC] = 0):
+def message_to_json(message: Message, function: str, winner: PlayerDC = 0, text: str = "", players: int = 0, variants: list[dict] = 0):
     out = {
         "function": function,
         "message": {
@@ -142,7 +145,7 @@ def message_to_json(message: Message, function: str, winner: PlayerDC = 0, text:
     if winner != 0:
         out["winner"] = player_to_json(winner)
     if variants != 0:
-        out["variants"] = {player for player in players_to_json(variants)}
+        out["variants"] = [player for player in variants]
     return out
 
 

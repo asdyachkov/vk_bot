@@ -4,7 +4,7 @@ import typing
 from typing import Optional
 
 import aioamqp
-from aioamqp import channel, envelope
+from aioamqp import channel
 from aiohttp import TCPConnector
 from aiohttp.client import ClientSession
 
@@ -24,7 +24,7 @@ from app.store.vk_api.keyboards import (
 )
 from app.store.vk_api.poller import Poller
 from app.users.dataclassess import ChatUser
-from app.web.utils import update_to_json, update_event_to_json, json_to_update, json_to_message
+from app.web.utils import update_to_json, update_event_to_json, json_to_message
 
 if typing.TYPE_CHECKING:
     from app.web.app import Application
@@ -169,6 +169,7 @@ class VkApiAccessor(BaseAccessor):
         elif update["function"] == "edit_recruiting_players":
             await self.edit_recruiting_players(message, update["players"])
         elif update["function"] == "create_new_poll":
+            print(update["variants"])
             await self.create_new_poll(message, update["variants"])
         elif update["function"] == "start_game":
             await self.start_game(message)
@@ -238,7 +239,7 @@ class VkApiAccessor(BaseAccessor):
             data = await resp.json()
             self.logger.info(data)
 
-    async def create_new_poll(self, message: Message, variants: list) -> None:
+    async def create_new_poll(self, message: Message, variants: list[dict]) -> None:
         async with self.session.get(
             self._build_query(
                 API_PATH,
@@ -249,7 +250,7 @@ class VkApiAccessor(BaseAccessor):
                     "conversation_message_id": int(
                         message.conversation_message_id
                     ),
-                    "attachment": f"photo{variants[0].photo_id},photo{variants[1].photo_id}",
+                    "attachment": f"photo{variants[0]['photo_id']},photo{variants[1]['photo_id']}",
                     "user_id": message.user_id,
                     "keyboard": create_new_poll_keyboard(variants),
                     "access_token": self.app.config.bot.token,
@@ -405,18 +406,18 @@ class VkApiAccessor(BaseAccessor):
             data = await resp.json()
             self.logger.info(data)
 
-    async def end_game(self, message: Message, winner: PlayerDC):
+    async def end_game(self, message: Message, winner: dict):
         async with self.session.get(
             self._build_query(
                 API_PATH,
                 "messages.edit",
                 params={
                     "peer_id": message.peer_id,
-                    "message": f"Игра закончилась. Победитель {winner.name} {winner.last_name}",
+                    "message": f"Игра закончилась. Победитель {winner['name']} {winner['last_name']}",
                     "conversation_message_id": int(
                         message.conversation_message_id
                     ),
-                    "attachment": f"photo{winner.photo_id}",
+                    "attachment": f"photo{winner['photo_id']}",
                     "user_id": message.user_id,
                     "access_token": self.app.config.bot.token,
                 },

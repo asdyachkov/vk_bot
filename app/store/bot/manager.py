@@ -6,11 +6,11 @@ from typing import Optional
 
 import aioamqp
 from aioamqp import channel
-from aiohttp import ClientSession, TCPConnector
+from aiohttp import ClientSession
 
 from app.game.models import GameDC, RoundDC
 from app.store.vk_api.dataclasses import Message
-from app.web.utils import json_to_update, message_to_json
+from app.web.utils import json_to_update, message_to_json, players_to_json
 
 if typing.TYPE_CHECKING:
     from app.web.app import Application
@@ -360,10 +360,11 @@ class BotManager:
                                 round_state, round_id, for_update=True
                             )
                         )
+                        print(players_to_json(variants))
                         await self.channel_for_sending.basic_publish(
                             payload=json.dumps(message_to_json(
                                 message=message,
-                                variants=variants,
+                                variants=players_to_json(variants),
                                 function="create_new_poll"
                             )).encode(),
                             exchange_name='',
@@ -528,10 +529,12 @@ class BotManager:
                 else:
                     await self.end_game(round_state, round_id, message, game_id)
             elif len(variants) == 2:
+                print(variants)
+                print(players_to_json(variants))
                 await self.channel_for_sending.basic_publish(
                     payload=json.dumps(message_to_json(
                         message=message,
-                        variants=variants,
+                        variants=players_to_json(variants),
                         function="create_new_poll"
                     )).encode(),
                     exchange_name='',
