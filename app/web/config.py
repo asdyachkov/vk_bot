@@ -27,12 +27,12 @@ class BotConfig:
 
 @dataclass
 class DatabaseConfig:
-    url: str = "postgresql+asyncpg://kts_user:kts_pass@localhost/kts"
+    url: str = "postgresql+asyncpg://pwaehjqg:x5lVnQaSiJNr8bMbSTJaTbIwWEQtkOek@ruby.db.elephantsql.com/pwaehjqg"
     host: str = "localhost"
     port: int = 5432
-    user: str = "postgres"
-    password: str = "postgres"
-    database: str = "project"
+    user: str = "ruby.db.elephantsql.com"
+    password: str = "x5lVnQaSiJNr8bMbSTJaTbIwWEQtkOek"
+    database: str = "pwaehjqg"
 
 
 @dataclass

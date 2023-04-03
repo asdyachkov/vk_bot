@@ -15,22 +15,6 @@ from app.game.models import (
 
 
 class GameAccessor(BaseAccessor):
-    async def get_all_users_by_chat_id(
-        self, chat_id: int
-    ) -> list[PlayerDC] | None:
-        query = select(PlayerDCModel).where(PlayerDCModel.game_id == chat_id)
-        async with self.app.database._engine.connect() as connection:
-            players: CursorResult = await connection.execute(query)
-        players_all = players.fetchall()
-        if players_all:
-            players_out = []
-            for player in players_all:
-                players_out.append(
-                    PlayerDC(player[0], player[1], player[2], player[4])
-                )
-            return players_out
-        return None
-
     async def create_game(self, game: GameDC) -> int:
         if not await self.is_chat_id_exists(game.chat_id):
             query = (
@@ -385,16 +369,6 @@ class GameAccessor(BaseAccessor):
             return int(games_all[0])
         else:
             return None
-
-    async def is_player_exists(self, vk_id) -> bool:
-        query = select(PlayerDCModel).where(PlayerDCModel.vk_id == vk_id)
-        async with self.app.database._engine.connect() as connection:
-            players: CursorResult = await connection.execute(query)
-        player = players.fetchone()
-        if not player:
-            return False
-        else:
-            return True
 
     async def sum_voites(self) -> int:
         query = select(func.sum(LeaderDCModel.total_score))

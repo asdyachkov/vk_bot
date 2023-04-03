@@ -12,7 +12,6 @@ from app.store.vk_api.dataclasses import (
     UpdateEventObject,
     Message,
 )
-from app.users.dataclassess import ChatUser
 
 
 def json_response(data: Any = None, status: str = "ok") -> Response:
@@ -44,19 +43,6 @@ def error_json_response(
     )
 
 
-def users_to_json(users: list[ChatUser]):
-    json_users = []
-    for user in users:
-        json_users.append(
-            {
-                "id": user.id,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-            }
-        )
-    return json_users
-
-
 def players_to_json(players: list[PlayerDC]) -> list[dict]:
     json_users = []
     for player in players:
@@ -71,14 +57,6 @@ def players_to_json(players: list[PlayerDC]) -> list[dict]:
         dict_to_append["round_id"] = player.round_id
         json_users.append(dict_to_append)
     return json_users
-
-
-def game_to_json(game: GameDC):
-    return {
-        "chat_id": game.chat_id,
-        "created_at": str(game.created_at),
-        "players": players_to_json(game.players),
-    }
 
 
 def update_to_json(update: Update):
@@ -140,7 +118,10 @@ def message_to_json(
     winner: PlayerDC = 0,
     text: str = "",
     players: int = 0,
+    game_id: int = 0,
+    round_id: int = 0,
     variants: list[dict] = 0,
+    variants_int: list[int] = 0,
 ):
     out = {
         "function": function,
@@ -154,9 +135,13 @@ def message_to_json(
         },
         "text": text,
         "players": players,
+        "game_id": game_id,
+        "round_id": round_id,
     }
     if winner != 0:
         out["winner"] = player_to_json(winner)
+    if variants_int != 0:
+        out["variants_int"] = variants_int
     if variants != 0:
         out["variants"] = [player for player in variants]
     return out
