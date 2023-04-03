@@ -656,7 +656,9 @@ class BotManager:
             return False, -1
 
     async def is_player_can_void(self, user_id: int, round_id: int):
-        if not await self.app.store.game.is_player_already_void(user_id, round_id):
+        if not await self.app.store.game.is_player_already_void(
+            user_id, round_id
+        ):
             return True
         return False
 
