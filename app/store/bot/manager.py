@@ -665,7 +665,7 @@ class BotManager:
         return False
 
     async def to_sum_up_round(
-        self, variants: list[int], round_id: int, message: Message
+        self, variants: list[dict], round_id: int, message: Message
     ):
         if await self.app.store.game.is_game_was_started_in_chat(
             message.group_id
