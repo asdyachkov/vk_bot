@@ -538,14 +538,14 @@ class GameAccessor(BaseAccessor):
         game = games.fetchone()
         return bool(game[0])
 
-    async def get_winner_round(self, variants: list[int], round_id: int) -> int:
+    async def get_winner_round(self, variants: list[dict], round_id: int) -> int:
         query = (
             select(PlayerDCModel.id)
             .where(
                 and_(
                     PlayerDCModel.round_id == round_id,
                     PlayerDCModel.vk_id.in_(
-                        (variants[0].vk_id, variants[1].vk_id)
+                        (variants[0]["vk_id"], variants[1]["vk_id"])
                     ),
                     PlayerDCModel.is_plaid == True,
                 )
