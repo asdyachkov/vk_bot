@@ -124,7 +124,7 @@ class GameAccessor(BaseAccessor):
     ) -> int:
         query = select(func.count(PlayerDCModel.id)).where(
             and_(
-                PlayerDCModel.state - score == -2,
+                PlayerDCModel.state - score == -1,
                 PlayerDCModel.round_id == round_id,
                 PlayerDCModel.is_plaid == False,
             )
@@ -140,7 +140,7 @@ class GameAccessor(BaseAccessor):
     async def get_players_in_round(self, score: int, round_id: int) -> int:
         query = select(func.count(PlayerDCModel.id)).where(
             and_(
-                PlayerDCModel.state - score == 0,
+                PlayerDCModel.state - score == -1,
                 PlayerDCModel.round_id == round_id,
             )
         )
@@ -152,8 +152,9 @@ class GameAccessor(BaseAccessor):
     async def get_players_in_next_round(self, score: int, round_id: int) -> int:
         query = select(func.count(PlayerDCModel.id)).where(
             and_(
-                PlayerDCModel.state - score == -1,
+                PlayerDCModel.state - score == 0,
                 PlayerDCModel.round_id == round_id,
+                PlayerDCModel.is_plaid == False,
             )
         )
         async with self.app.database._engine.connect() as connection:
@@ -271,7 +272,7 @@ class GameAccessor(BaseAccessor):
         count = counts.fetchone()
         return int(count[0])
 
-    async def get_player_id_by_vk_id(self, round_id: int, vk_id: int) -> int:
+    async def get_player_id_by_vk_id(self, round_id: int, vk_id: int) -> int | None:
         query = (
             select(PlayerDCModel.id)
             .where(
@@ -285,7 +286,10 @@ class GameAccessor(BaseAccessor):
         async with self.app.database._engine.connect() as connection:
             players: CursorResult = await connection.execute(query)
         player_ids = players.fetchone()
-        return int(player_ids[0])
+        if player_ids:
+            return int(player_ids[0])
+        else:
+            return None
 
     async def is_player_added_to_leaderboard(self, vk_id: int) -> bool:
         query = select(LeaderDCModel.id).where(
@@ -529,14 +533,18 @@ class GameAccessor(BaseAccessor):
             await connection.execute(query)
             await connection.commit()
 
-    async def is_player_already_void(self, player_id: int) -> bool:
-        query = select(PlayerDCModel.is_voited).where(
-            PlayerDCModel.id == player_id
-        )
+    async def is_player_already_void(self, user_id: int, round_id) -> bool:
+        query = select(PlayerDCModel.is_voited).where(and_(
+            PlayerDCModel.vk_id == user_id,
+            PlayerDCModel.round_id == round_id
+            )
+        ).limit(1)
         async with self.app.database._engine.connect() as connection:
             games: CursorResult = await connection.execute(query)
         game = games.fetchone()
-        return bool(game[0])
+        if game:
+            return bool(game[0])
+        return True
 
     async def get_winner_round(self, variants: list[dict], round_id: int) -> int:
         query = (
@@ -551,12 +559,12 @@ class GameAccessor(BaseAccessor):
                 )
             )
             .order_by(desc(PlayerDCModel.score))
-            .limit(1)
+            .limit(2)
         )
         async with self.app.database._engine.connect() as connection:
             ids_: CursorResult = await connection.execute(query)
-        id = ids_.fetchone()
-        return int(id[0])
+        id = ids_.fetchall()
+        return int(id[0][0])
 
     async def increase_winner_state(self, player_id: int) -> None:
         query = (

@@ -656,16 +656,12 @@ class BotManager:
             return False, -1
 
     async def is_player_can_void(self, user_id: int, round_id: int):
-        player_id = await self.app.store.game.get_player_id_by_vk_id(
-            round_id, user_id
-        )
-        if player_id:
-            if not await self.app.store.game.is_player_already_void(player_id):
-                return True
+        if not await self.app.store.game.is_player_already_void(user_id, round_id):
+            return True
         return False
 
     async def to_sum_up_round(
-        self, variants: list[int], round_id: int, message: Message
+        self, variants: list[dict], round_id: int, message: Message
     ):
         if await self.app.store.game.is_game_was_started_in_chat(
             message.group_id
