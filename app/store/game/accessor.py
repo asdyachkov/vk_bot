@@ -533,14 +533,18 @@ class GameAccessor(BaseAccessor):
             await connection.execute(query)
             await connection.commit()
 
-    async def is_player_already_void(self, player_id: int) -> bool:
-        query = select(PlayerDCModel.is_voited).where(
-            PlayerDCModel.id == player_id
-        )
+    async def is_player_already_void(self, user_id: int, round_id) -> bool:
+        query = select(PlayerDCModel.is_voited).where(and_(
+            PlayerDCModel.vk_id == user_id,
+            PlayerDCModel.round_id == round_id
+            )
+        ).limit(1)
         async with self.app.database._engine.connect() as connection:
             games: CursorResult = await connection.execute(query)
         game = games.fetchone()
-        return bool(game[0])
+        if game:
+            return bool(game[0])
+        return True
 
     async def get_winner_round(self, variants: list[dict], round_id: int) -> int:
         query = (
