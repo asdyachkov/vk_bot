@@ -1,3 +1,4 @@
+import asyncio
 import typing
 
 from app.store.database.database import Database
@@ -14,6 +15,8 @@ class Store:
         from app.store.admin.accessor import AdminAccessor
 
         self.vk_api = VkApiAccessor(app)
+        loop = asyncio.get_event_loop()
+        loop.create_task(self.vk_api.connect(app))
         self.game = GameAccessor(app)
         self.bots_manager = BotManager(app)
         self.admin = AdminAccessor(app)

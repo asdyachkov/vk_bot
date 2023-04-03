@@ -73,11 +73,12 @@ class GameAccessor(BaseAccessor):
             players_out.append(
                 PlayerDC(
                     vk_id=player[1],
-                    name=player[3],
                     is_admin=player[2],
+                    name=player[3],
                     last_name=player[4],
                     photo_id=player[5],
                     score=player[6],
+                    state=player[7],
                     round_id=player[8],
                 )
             )

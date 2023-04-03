@@ -31,7 +31,7 @@ def create_start_keyboard():
     )
 
 
-def create_new_poll_keyboard(variants):
+def create_new_poll_keyboard(variants: list[dict]):
     return json.dumps(
         {
             "inline": True,
@@ -41,9 +41,9 @@ def create_new_poll_keyboard(variants):
                         "action": {
                             "type": "callback",
                             "payload": '{"callback_data": '
-                            + f'"vk_id: {variants[0].vk_id}"'
+                            + f'"vk_id: {variants[0]["vk_id"]}"'
                             + "}",
-                            "label": f"{variants[0].name} (Голосов: {variants[0].score})",
+                            "label": f"{variants[0]['name']} (Голосов: {variants[0]['score']})",
                         },
                         "color": "primary",
                     },
@@ -53,9 +53,9 @@ def create_new_poll_keyboard(variants):
                         "action": {
                             "type": "callback",
                             "payload": '{"callback_data": '
-                            + f'"vk_id: {variants[1].vk_id}"'
+                            + f'"vk_id: {variants[1]["vk_id"]}"'
                             + "}",
-                            "label": f"{variants[1].name} (Голосов: {variants[1].score})",
+                            "label": f"{variants[1]['name']} (Голосов: {variants[1]['score']})",
                         },
                         "color": "primary",
                     },
