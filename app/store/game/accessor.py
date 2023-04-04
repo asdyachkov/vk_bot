@@ -30,8 +30,10 @@ class GameAccessor(BaseAccessor):
     async def get_two_players_photo(
         self, round_state: int, round_id: int, for_update=False
     ) -> list[PlayerDC]:
-        if for_update == False:
+        if for_update is False:
             is_plaid = (False,)
+        elif for_update == 0:
+            is_plaid = (True,)
         else:
             is_plaid = (False, True)
         query = (

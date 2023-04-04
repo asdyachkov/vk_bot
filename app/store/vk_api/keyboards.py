@@ -60,6 +60,16 @@ def create_new_poll_keyboard(variants: list[dict]):
                         "color": "primary",
                     },
                 ],
+                [
+                    {
+                        "action": {
+                            "type": "callback",
+                            "payload": '{"callback_data": "end game"}',
+                            "label": "Досрочно закончить игру",
+                        },
+                        "color": "negative",
+                    },
+                ],
             ],
         }
     )

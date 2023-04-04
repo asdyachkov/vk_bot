@@ -200,6 +200,62 @@ class BotManager:
                             exchange_name="",
                             routing_key="to_sender",
                         )
+                elif update.object.payload["callback_data"] == "end game":
+                    message = Message(
+                        user_id=update.object.user_id,
+                        text="",
+                        peer_id=update.object.peer_id,
+                        event_id=update.object.event_id,
+                        group_id=update.object.group_id,
+                        conversation_message_id=update.object.conversation_message_id,
+                    )
+                    game_id = (
+                        await self.app.store.game.is_game_was_started_in_chat(
+                            message.group_id
+                        )
+                    )
+                    (
+                        round_state,
+                        round_id,
+                    ) = await self.app.store.game.get_round_state_by_game_id(
+                        game_id
+                    )
+                    if await self.app.store.admin.is_admin_by_vk_id(
+                        message.user_id
+                    ):
+                        variants = (
+                            await self.app.store.game.get_two_players_photo(
+                                round_state, round_id, for_update=0
+                            )
+                        )
+                        player_id = (
+                            await self.app.store.game.get_player_id_by_vk_id(
+                                round_id, variants[0].vk_id
+                            )
+                        )
+                        await self.app.store.game.increase_winner_state(
+                            player_id
+                        )
+                        await self.end_game(
+                            round_state, round_id, message, game_id
+                        )
+                    else:
+                        await self.channel_for_sending.basic_publish(
+                            payload=json.dumps(
+                                message_to_json(
+                                    message=Message(
+                                        user_id=update.object.user_id,
+                                        text="",
+                                        peer_id=update.object.peer_id,
+                                        event_id=update.object.event_id,
+                                    ),
+                                    text="❗ Прервать игру могут только администраторы ❗",
+                                    function="answer_pop_up_notification",
+                                )
+                            ).encode(),
+                            exchange_name="",
+                            routing_key="to_sender",
+                        )
                 elif update.object.payload["callback_data"] == "add me":
                     canceling_add = False
                     game_id = (
