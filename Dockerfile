@@ -2,7 +2,7 @@ FROM python:3.10
 
 ENV PYTHONUNBUFFERED 1
 
-RUN pip install requirements.txt
+RUN pip install -r requirements.txt
 
 ENV PATH=/root/.local:$PATH
 
