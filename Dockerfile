@@ -10,6 +10,9 @@ WORKDIR /vkbot
 
 COPY . .
 
+EXPOSE 8000
+EXPOSE 5672
+
 CMD ["python", "-u", "poller.py"]
 CMD ["python", "-u", "worker.py"]
 CMD ["python", "-u", "sender.py"]
