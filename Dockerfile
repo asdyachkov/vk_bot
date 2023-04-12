@@ -10,8 +10,6 @@ WORKDIR /vkbot
 
 COPY . .
 
-ENV PATH=/root/.local:$PATH
-
 CMD ["python", "-u", "poller.py"]
 CMD ["python", "-u", "worker.py"]
 CMD ["python", "-u", "sender.py"]
