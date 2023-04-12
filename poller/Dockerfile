@@ -2,11 +2,11 @@ FROM python:3.10
 
 ENV PYTHONUNBUFFERED 1
 
+RUN pip install --user -r requirements.txt
+
 ADD .. /poller/
 
 WORKDIR /poller/
-
-RUN pip install --user -r requirements.txt
 
 EXPOSE 8000
 EXPOSE 5672
