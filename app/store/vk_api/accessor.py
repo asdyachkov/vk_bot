@@ -47,7 +47,7 @@ class VkApiAccessor(BaseAccessor):
     async def connect(self, app: "Application"):
         self.session = ClientSession(connector=TCPConnector(verify_ssl=False))
         transport, protocol = await aioamqp.connect(
-            host="127.0.0.1", port=5672, login="guest", password="guest"
+            host="localhost", port=5672, login="guest", password="guest"
         )
         self.logger.info("Transport got")
         self.channel = await protocol.channel()
