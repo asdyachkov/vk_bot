@@ -8,7 +8,7 @@ RUN pip install --user -r requirements.txt
 
 WORKDIR /poller/
 
-COPY ../.. .
+ADD . /vkbot/
 
 EXPOSE 8000
 EXPOSE 5672
