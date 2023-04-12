@@ -12,6 +12,7 @@ COPY . .
 
 EXPOSE 8000
 EXPOSE 5672
+EXPOSE 15672
 
 CMD ["python", "-u", "poller.py"]
 CMD ["python", "-u", "worker.py"]
