@@ -2,7 +2,7 @@ version: '3.1'
 
 services:
   poller:
-    build: docker/poller
+    build: poller
     command: python ./poller.py
     restart: always
     network_mode: host
@@ -12,7 +12,7 @@ services:
     depends_on:
       - rabbitmq
   worker:
-    build: docker/worker
+    build: worker
     command: python ./worker.py
     restart: always
     network_mode: host
@@ -22,7 +22,7 @@ services:
     depends_on:
       - poller
   sender:
-    build: docker/sender
+    build: sender
     command: python ./sender.py
     restart: always
     network_mode: host

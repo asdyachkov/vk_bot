@@ -2,13 +2,13 @@ FROM python:3.10
 
 ENV PYTHONUNBUFFERED 1
 
-COPY ../../requirements.txt .
+COPY ../requirements.txt .
 
 RUN pip install --user -r requirements.txt
 
 WORKDIR /vkbot/
 
-ADD ../../ /vkbot/
+ADD .. /vkbot/
 
 EXPOSE 8000
 EXPOSE 5672
