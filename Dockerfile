@@ -6,15 +6,9 @@ COPY requirements.txt .
 
 RUN pip install --user -r requirements.txt
 
-WORKDIR /vk_bot
+WORKDIR /vkbot
 
-ADD app .
-ADD vk_bot_admin .
-
-COPY poller.py .
-COPY manage.py .
-COPY sender.py .
-COPY api.py .
+COPY . .
 
 ENV PATH=/root/.local:$PATH
 
