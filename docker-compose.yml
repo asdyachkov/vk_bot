@@ -3,7 +3,7 @@ version: '3.1'
 services:
   poller:
     build: poller/
-    command: python ./poller.py
+    command: python poller.py
     restart: always
     network_mode: host
     ports:
@@ -13,7 +13,7 @@ services:
       - rabbitmq
   worker:
     build: worker/
-    command: python ./worker.py
+    command: python worker.py
     restart: always
     network_mode: host
     ports:
@@ -23,7 +23,7 @@ services:
       - poller
   sender:
     build: sender/
-    command: python ./sender.py
+    command: python sender.py
     restart: always
     network_mode: host
     ports:
