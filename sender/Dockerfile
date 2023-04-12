@@ -2,9 +2,9 @@ FROM python:3.10
 
 ENV PYTHONUNBUFFERED 1
 
-WORKDIR /vkbot/
+ADD .. /sender/
 
-ADD .. /vkbot/
+WORKDIR /sender/
 
 RUN pip install --user -r requirements.txt
 
