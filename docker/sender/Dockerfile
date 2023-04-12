@@ -6,7 +6,7 @@ COPY ../../requirements.txt .
 
 RUN pip install --user -r requirements.txt
 
-WORKDIR /poller/
+WORKDIR /vkbot/
 
 ADD . /vkbot/
 
