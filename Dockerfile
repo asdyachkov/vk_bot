@@ -8,8 +8,9 @@ RUN pip install --user -r requirements.txt
 
 WORKDIR /vk_bot
 
-COPY app .
-COPY vk_bot_admin .
+ADD app .
+ADD vk_bot_admin .
+
 COPY poller.py .
 COPY manage.py .
 COPY sender.py .
