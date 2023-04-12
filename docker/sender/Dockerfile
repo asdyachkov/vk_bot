@@ -2,7 +2,7 @@ FROM python:3.10
 
 ENV PYTHONUNBUFFERED 1
 
-ADD ../../requirements.txt .
+ADD requirements.txt .
 
 RUN pip install --user -r requirements.txt
 

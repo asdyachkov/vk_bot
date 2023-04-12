@@ -5,18 +5,37 @@ services:
     build: docker/poller
     command: python ./poller.py
     restart: always
+    network_mode: host
+    ports:
+      - 15672:15672
+      - 5672:5672
+    depends_on:
+      - rabbitmq
   worker:
     build: docker/worker
     command: python ./worker.py
     restart: always
+    network_mode: host
+    ports:
+      - 15672:15672
+      - 5672:5672
+    depends_on:
+      - poller
   sender:
     build: docker/sender
     command: python ./sender.py
     restart: always
+    network_mode: host
+    ports:
+      - 15672:15672
+      - 5672:5672
+    depends_on:
+      - worker
   rabbitmq:
     image: rabbitmq:3.10.7-management
     hostname: rabbitmq
     restart: always
+    network_mode: host
     ports:
       - 15672:15672
       - 5672:5672
