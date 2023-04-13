@@ -32,7 +32,7 @@ class BotManager:
     async def connect(self):
         await self.app.database.connect()
         transport, protocol = await aioamqp.connect(
-            host="127.0.0.1", port=5672, login="guest", password="guest"
+            host="localhost", port=5672, login="guest", password="guest"
         )
         self.channel = await protocol.channel()
         self.channel_for_delay_message = await protocol.channel()

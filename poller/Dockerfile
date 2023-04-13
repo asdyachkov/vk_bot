@@ -13,6 +13,8 @@ ADD config.yaml /poller/
 
 WORKDIR /poller/
 
+CMD ["python", "./poller.py"]
+
 EXPOSE 8000
 EXPOSE 5672
 EXPOSE 15672

@@ -13,6 +13,8 @@ ADD config.yaml /sender/
 
 WORKDIR /sender/
 
+CMD ["python", "./sender.py"]
+
 EXPOSE 8000
 EXPOSE 5672
 EXPOSE 15672

@@ -13,6 +13,8 @@ ADD config.yaml /worker/
 
 WORKDIR /worker/
 
+CMD ["python", "./worker.py"]
+
 EXPOSE 8000
 EXPOSE 5672
 EXPOSE 15672
