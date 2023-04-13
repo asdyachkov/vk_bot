@@ -3,7 +3,7 @@ version: '3.1'
 services:
   admin:
     build: docker_admin/
-    command: python manage.py runserver 0.0.0.0:8000
+    command: python manage.py runserver 95.163.241.174:8000
     restart: always
     ports:
       - 8000:8000
