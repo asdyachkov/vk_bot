@@ -3,11 +3,12 @@ version: '3.1'
 services:
   admin:
     build: docker_admin/
-    command: python manage.py runserver 127.0.0.1:8000
+    command: python manage.py runserver 0.0.0.0:8000
     restart: always
     network_mode: host
     ports:
-      - 8000:8000
+      - 0.0.0.0:8000:8000
+      - 5432:5432
   rabbitmq:
     image: rabbitmq:3.10.7-management
     hostname: rabbitmq
