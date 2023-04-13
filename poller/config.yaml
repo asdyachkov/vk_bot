@@ -1,0 +1,17 @@
+user_token: OTY3NmVjYWYtZTJhNC00NzNhLTgwM2YtZGY3OTBkYTM3YWFhXzQ0MTE=
+session:
+  key: CaY5iCkYtN7DqXdiYK1BvmGrQuaSA4Tl4bEk9my0jc0=
+admin:
+  email: stepanderdichok@gmail.com
+  password: Fucck228
+  salt: \x01c\x94\xee28\xe0\xb1\x1b!"\xda\xe3\xcd"D\x8e\x03\xa4\xd34\xc5h\xd9\xf5}\xce\xa5w\x0b\xba(
+database:
+  url: postgresql+asyncpg://pwaehjqg:x5lVnQaSiJNr8bMbSTJaTbIwWEQtkOek@ruby.db.elephantsql.com/pwaehjqg
+  host: ruby.db.elephantsql.com
+  port: 5432
+  user: pwaehjqg
+  password: x5lVnQaSiJNr8bMbSTJaTbIwWEQtkOek
+  database: pwaehjqg
+bot:
+  token: vk1.a.eOA7dVjmHwhLMFTYRAeGHTVpEbImjKbFMS-fSeGBIzbSD1OR087c6bsXbbLVyBPfRKhUMTvL3SQKDbsTiZvgyiUFJDYqf1U9E06uFAV6xovYCEhXK6z71Ajbh3b9GNOMIr5t5GneJoiwNqHt0uJlalgeGIOPleR5K4AeB3Mlm6BxzSMyZqCb2UErBnzv0hT67mWUUFcJ0Pa3aqKhLTe92g
+  group_id: 218928922

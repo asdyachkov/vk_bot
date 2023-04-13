@@ -9,6 +9,7 @@ RUN pip install --user -r requirements.txt
 ADD app /poller/app
 ADD poller.py /poller/
 ADD VERSION /poller/
+ADD config.yaml /poller/
 
 WORKDIR /poller/
 
