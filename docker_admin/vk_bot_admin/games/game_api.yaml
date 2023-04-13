@@ -1,7 +1,7 @@
 paths:
   '':
     get:
-      $handler: vk_bot_admin.games.views.get_users
+      $handler: docker_admin.games.views.get_users
       tags:
         - games
       summary: Games list
