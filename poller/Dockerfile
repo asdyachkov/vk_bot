@@ -6,7 +6,7 @@ COPY requirements.txt .
 
 RUN pip install --user -r requirements.txt
 
-ADD app/ /poller/
+ADD app /poller/app
 ADD poller.py /poller/
 
 WORKDIR /poller/
