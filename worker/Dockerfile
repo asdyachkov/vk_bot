@@ -6,7 +6,7 @@ COPY requirements.txt .
 
 RUN pip install --user -r requirements.txt
 
-COPY .. /worker/
+ADD app /worker/
 
 WORKDIR /worker/
 
