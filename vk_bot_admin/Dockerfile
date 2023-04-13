@@ -6,8 +6,8 @@ COPY requirements.txt .
 
 RUN pip install --user -r requirements.txt
 
-ADD . /admin/
+ADD . /vk_bot_admin/
 
-WORKDIR /admin/
+WORKDIR /vk_bot_admin/
 
 EXPOSE 8000
