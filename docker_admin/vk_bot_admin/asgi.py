@@ -11,6 +11,6 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "docker_admin.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "vk_bot_admin.settings")
 
 application = get_asgi_application()

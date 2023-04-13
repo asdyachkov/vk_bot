@@ -6,8 +6,8 @@ COPY requirements.txt .
 
 RUN pip install --user -r requirements.txt
 
-ADD . /docker_admin/
+ADD . /vk_bot_admin/
 
-WORKDIR /docker_admin/
+WORKDIR /vk_bot_admin/
 
 EXPOSE 8000

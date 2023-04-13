@@ -2,8 +2,8 @@ version: '3.1'
 
 services:
   admin:
-    build: docker_admin/
-    command: python ./manage.py runserver 0.0.0.0:8000
+    build: vk_bot_admin/
+    command: python manage.py runserver 0.0.0.0:8000
     restart: always
     network_mode: host
     ports:
