@@ -51,7 +51,7 @@ class BotManager:
             queue_name="for_delay",
             durable=True,
             arguments={
-                "x-message-ttl": 60000,
+                "x-message-ttl": 30000,
                 "x-dead-letter-exchange": "amq.direct",
                 "x-dead-letter-routing-key": "to_worker",
             },
