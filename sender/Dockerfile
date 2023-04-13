@@ -6,7 +6,7 @@ COPY requirements.txt .
 
 RUN pip install --user -r requirements.txt
 
-ADD app /sender/
+ADD app/ /sender/
 ADD sender.py /sender/
 
 WORKDIR /sender/
