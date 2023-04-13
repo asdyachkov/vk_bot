@@ -40,7 +40,7 @@ services:
     depends_on:
       - worker
   admin:
-    build: vk_bot_admin/
+    build: docker admin/
     command: python manage.py runserver localhost:8000
     restart: always
     network_mode: host
