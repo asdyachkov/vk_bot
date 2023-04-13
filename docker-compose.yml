@@ -40,7 +40,7 @@ services:
     depends_on:
       - worker
   admin:
-    build: docker admin/
+    build: docker_admin/
     command: python manage.py runserver localhost:8000
     restart: always
     network_mode: host
