@@ -41,10 +41,8 @@ services:
       - worker
   admin:
     build: docker_admin/
-    command: python manage.py runserver localhost:8000
+    command: python manage.py runserver 127.0.0.1:8000
     restart: always
     network_mode: host
     ports:
       - 8000:8000
-    depends_on:
-      - sender
