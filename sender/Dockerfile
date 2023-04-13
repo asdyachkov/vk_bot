@@ -8,6 +8,7 @@ RUN pip install --user -r requirements.txt
 
 ADD app /sender/app
 ADD sender.py /sender/
+ADD VERSION /sender/
 
 WORKDIR /sender/
 

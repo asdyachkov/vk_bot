@@ -8,6 +8,7 @@ RUN pip install --user -r requirements.txt
 
 ADD app /worker/app
 ADD worker.py /worker/
+ADD VERSION /worker/
 
 WORKDIR /worker/
 
