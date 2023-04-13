@@ -1,0 +1,15 @@
+paths:
+  '':
+    get:
+      $handler: docker_admin.games.views.get_users
+      tags:
+        - games
+      summary: Games list
+      description: Returns list of games
+
+      produces:
+        - application/json
+
+      responses:
+        200:
+        description: OK
