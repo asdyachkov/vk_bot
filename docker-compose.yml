@@ -39,3 +39,8 @@ services:
       - 5672:5672
     depends_on:
       - worker
+  admin:
+    build: admin/
+    command: python manage.py runserver localhost:8000
+    ports:
+      - 8000:8000
