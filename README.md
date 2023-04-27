@@ -1,4 +1,4 @@
-# Почта от metaclass
+# Почта
 ## stepanderdichok@gmail.com
 # ФИО
 ## Дьячков Степан Алексеевич
